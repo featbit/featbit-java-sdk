@@ -10,7 +10,7 @@ import java.net.Proxy;
 import java.time.Duration;
 import java.util.Map;
 
-final class HttpConfingImpl implements HttpConfig {
+final class HttpConfigImpl implements HttpConfig {
     private final Duration connectTime;
     private final Duration socketTime;
     private final Proxy proxy;
@@ -20,14 +20,14 @@ final class HttpConfingImpl implements HttpConfig {
     private final X509TrustManager x509TrustManager;
     private final Iterable<Map.Entry<String, String>> headers;
 
-    HttpConfingImpl(Duration connectTime,
-                    Duration socketTime,
-                    Proxy proxy,
-                    Authenticator authenticator,
-                    SocketFactory socketFactory,
-                    SSLSocketFactory sslSocketFactory,
-                    X509TrustManager x509TrustManager,
-                    Iterable<Map.Entry<String, String>> headers) {
+    HttpConfigImpl(Duration connectTime,
+                   Duration socketTime,
+                   Proxy proxy,
+                   Authenticator authenticator,
+                   SocketFactory socketFactory,
+                   SSLSocketFactory sslSocketFactory,
+                   X509TrustManager x509TrustManager,
+                   Iterable<Map.Entry<String, String>> headers) {
         this.connectTime = connectTime;
         this.socketTime = socketTime;
         this.proxy = proxy;

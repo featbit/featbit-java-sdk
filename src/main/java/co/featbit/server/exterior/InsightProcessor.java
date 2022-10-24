@@ -21,7 +21,7 @@ public interface InsightProcessor extends Closeable {
     /**
      * Records an event asynchronously.
      *
-     * @param event
+     * @param event insight event
      */
     void send(InsightTypes.Event event);
 

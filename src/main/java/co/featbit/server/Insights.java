@@ -34,9 +34,9 @@ abstract class Insights {
 
         private final AtomicBoolean closed = new AtomicBoolean(false);
 
-        public InsightProcessorImpl(String eventUrl, DefaultSender sender, long flushInterval, int capacity) {
+        public InsightProcessorImpl(String eventURI, DefaultSender sender, long flushInterval, int capacity) {
             this.inbox = new ArrayBlockingQueue<>(capacity);
-            new EventDispatcher(Pair.of(eventUrl, sender), inbox);
+            new EventDispatcher(Pair.of(eventURI, sender), inbox);
             this.flushScheduledExecutor = new ScheduledThreadPoolExecutor(1, Utils.createThreadFactory("insight-periodic-flush-worker-%d", true));
             flushScheduledExecutor.scheduleAtFixedRate(this::flush, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
             Loggers.EVENTS.debug("insight processor is ready");
@@ -94,7 +94,7 @@ abstract class Insights {
             if (msg.getType() == SHUTDOWN) {
                 while (true) {
                     try {
-                        // must put the shut down to inbox;
+                        // must put the shut-down to inbox;
                         inbox.put(msg);
                         return true;
                     } catch (InterruptedException ignore) {
@@ -110,46 +110,13 @@ abstract class Insights {
 
     }
 
-    private final static class FlushPayload {
-        private final InsightTypes.Event[] events;
-
-        public FlushPayload(InsightTypes.Event[] events) {
-            this.events = events;
-        }
-
-        public InsightTypes.Event[] getEvents() {
-            return events;
-        }
-    }
-
-    private final static class EventBuffer {
-        private final List<InsightTypes.Event> incomingEvents = new ArrayList<>();
-
-        void add(InsightTypes.Event event) {
-            incomingEvents.add(event);
-        }
-
-        FlushPayload getPayload() {
-            return new FlushPayload(incomingEvents.toArray(new InsightTypes.Event[0]));
-        }
-
-        void clear() {
-            incomingEvents.clear();
-        }
-
-        boolean isEmpty() {
-            return incomingEvents.isEmpty();
-        }
-
-    }
-
     private final static class FlushPayloadRunner {
 
         private final static int MAX_EVENT_SIZE_PER_REQUEST = 50;
 
         private final Pair<String, DefaultSender> config;
 
-        private InsightTypes.Event[] payload;
+        private final InsightTypes.Event[] payload;
 
         public FlushPayloadRunner(Pair<String, DefaultSender> config, InsightTypes.Event[] payload) {
             this.config = config;

@@ -51,7 +51,7 @@ public final class FFCClientImp implements FFCClient {
     private final Evaluator evaluator;
     private final DataSynchronizer dataSynchronizer;
     private final Status.DataUpdateStatusProvider dataUpdateStatusProvider;
-    private final Status.DataUpdator dataUpdator;
+    private final Status.DataUpdater dataUpdater;
     private final InsightProcessor insightProcessor;
 
     private final Consumer<InsightTypes.Event> eventHandler;
@@ -106,8 +106,8 @@ public final class FFCClientImp implements FFCClient {
     public FFCClientImp(String envSecret, FFCConfig config) {
         checkNotNull(config, "FFCConfig Should not be null");
         checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
-        checkArgument(Utils.isUrl(config.getStreamingURI()), "streaming uri is invalid");
-        checkArgument(Utils.isUrl(config.getEventURI()), "event uri is invalid");
+        checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
+        checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
         this.offline = config.isOffline();
         this.envSecret = envSecret;
         ContextImp context = new ContextImp(envSecret, config);
@@ -128,8 +128,8 @@ public final class FFCClientImp implements FFCClient {
         };
         this.evaluator = new EvaluatorImp(flagGetter, segmentGetter);
         //data updator
-        Status.DataUpdatorImpl dataUpdatorImpl = new Status.DataUpdatorImpl(this.storage);
-        this.dataUpdator = dataUpdatorImpl;
+        Status.DataUpdaterImpl dataUpdatorImpl = new Status.DataUpdaterImpl(this.storage);
+        this.dataUpdater = dataUpdatorImpl;
         //data processor
         this.dataSynchronizer = config.getUpdateProcessorFactory().createUpdateProcessor(context, dataUpdatorImpl);
         //data update status provider
@@ -347,9 +347,9 @@ public final class FFCClientImp implements FFCClient {
                 DataModel.Data allData = all.data();
                 Long version = allData.getTimestamp();
                 Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allDataInStorageType = allData.toStorageType();
-                boolean res = dataUpdator.init(allDataInStorageType, version);
+                boolean res = dataUpdater.init(allDataInStorageType, version);
                 if (res) {
-                    dataUpdator.updateStatus(Status.StateType.OK, null);
+                    dataUpdater.updateStatus(Status.StateType.OK, null);
                 }
                 return res;
             }

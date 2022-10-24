@@ -14,9 +14,9 @@ public final class BasicConfig {
     private final String envSecret;
     private final boolean offline;
 
-    private final String streamingURL;
+    private final String streamingURI;
 
-    private final String eventURL;
+    private final String eventURI;
 
 
     /**
@@ -27,12 +27,12 @@ public final class BasicConfig {
      */
     public BasicConfig(String envSecret,
                        boolean offline,
-                       String streamingURI,
-                       String eventURI) {
+                       String streamingURL,
+                       String eventURL) {
         this.envSecret = envSecret;
         this.offline = offline;
-        this.streamingURL = StringUtils.stripEnd(streamingURI, "/").concat(DEFAULT_STREAMING_PATH);
-        this.eventURL = StringUtils.stripEnd(eventURI, "/").concat(DEFAULT_EVENT_PATH);
+        this.streamingURI = StringUtils.stripEnd(streamingURL, "/").concat(DEFAULT_STREAMING_PATH);
+        this.eventURI = StringUtils.stripEnd(eventURL, "/").concat(DEFAULT_EVENT_PATH);
     }
 
     /**
@@ -58,8 +58,8 @@ public final class BasicConfig {
      *
      * @return a string
      */
-    public String getStreamingURL() {
-        return streamingURL;
+    public String getStreamingURI() {
+        return streamingURI;
     }
 
     /**
@@ -67,7 +67,7 @@ public final class BasicConfig {
      *
      * @return a string
      */
-    public String getEventURL() {
-        return eventURL;
+    public String getEventURI() {
+        return eventURI;
     }
 }

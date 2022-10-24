@@ -13,8 +13,8 @@ public interface DataSynchronizerFactory {
      * Creates an implementation instance.
      *
      * @param context     allows access to the client configuration
-     * @param dataUpdator the {@link Status.DataUpdator} which pushes data into the {@link DataStorage}
+     * @param dataUpdater the {@link Status.DataUpdater} which pushes data into the {@link DataStorage}
      * @return an {@link DataSynchronizer}
      */
-    DataSynchronizer createUpdateProcessor(Context context, Status.DataUpdator dataUpdator);
+    DataSynchronizer createUpdateProcessor(Context context, Status.DataUpdater dataUpdater);
 }

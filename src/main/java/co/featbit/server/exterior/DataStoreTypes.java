@@ -27,8 +27,6 @@ public abstract class DataStoreTypes {
 
     public final static Category SEGMENTS = new Category("segments", "seg");
 
-    public final static Category USERTAGS = new Category("userTags", "ut");
-
     public final static Category DATATEST = new Category("datatests", "test");
 
     /**
@@ -38,7 +36,7 @@ public abstract class DataStoreTypes {
      * implementations can determine what kinds of model objects may need to be stored.
      */
 
-    public final List<Category> FFC_ALL_CATS = ImmutableList.of(FEATURES);
+    public final List<Category> FFC_ALL_CATS = ImmutableList.of(FEATURES, SEGMENTS, DATATEST);
 
     private DataStoreTypes() {
     }
@@ -60,7 +58,7 @@ public abstract class DataStoreTypes {
         }
 
         /**
-         * build a external category
+         * build an external category
          *
          * @param name the name of namespace
          * @return a Category
@@ -98,9 +96,7 @@ public abstract class DataStoreTypes {
     public interface Item {
         Integer FFC_FEATURE_FLAG = 100;
         Integer FFC_ARCHIVED_ITEM = 200;
-        Integer FFC_PERSISTENT_ITEM = 300;
-        Integer FFC_SEGMENT = 400;
-        Integer FFC_USER_TAG = 500;
+        Integer FFC_SEGMENT = 300;
 
         /**
          * return the unique id
@@ -129,109 +125,6 @@ public abstract class DataStoreTypes {
          * @return an integer
          */
         Integer getType();
-    }
-
-    /**
-     * Object, that contains s versioned item (or placeholder), storable in a {@link DataStorage}.
-     * <p>
-     * This is equivalent to {@link Item}, but is used for persistent data storage(like redis, mongodb etc.). The
-     * SDK will convert each data item to and from its json string form; the persistent data
-     * store deals only with the json form.
-     */
-    public static final class PersistentItem implements Item, Serializable {
-        private final String id;
-        private final Long timestamp;
-        private final Boolean isArchived;
-        private final String json;
-
-        private PersistentItem(String id,
-                               Long timestamp,
-                               Boolean isArchived,
-                               String json) {
-            this.id = id;
-            this.timestamp = timestamp;
-            this.isArchived = isArchived;
-            this.json = json;
-        }
-
-        /**
-         * build a PersistentItem instance
-         *
-         * @param id         unique id of PersistentItem
-         * @param timestamp  the version number, Ordinarily it's a timestamped value
-         * @param isArchived true if it's an archived object
-         * @param json       the json string
-         * @return a PersistentItem instance
-         */
-        public static PersistentItem of(String id,
-                                        Long timestamp,
-                                        Boolean isArchived,
-                                        String json) {
-            return new PersistentItem(id, timestamp, isArchived, json);
-        }
-
-        /**
-         * return unique id of PersistentItem
-         *
-         * @return a string
-         */
-        @Override
-        public String getId() {
-            return id;
-        }
-
-        /**
-         * return true if it's an archived object
-         *
-         * @return true if it's an archived object
-         */
-        @Override
-        public boolean isArchived() {
-            return isArchived;
-        }
-
-        /**
-         * return the version number, Ordinarily it's a timestamped value
-         *
-         * @return a long value
-         */
-        @Override
-        public Long getTimestamp() {
-            return timestamp;
-        }
-
-        /**
-         * return the type of PersistentItem
-         *
-         * @return an int
-         */
-        @Override
-        public Integer getType() {
-            return FFC_PERSISTENT_ITEM;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            PersistentItem that = (PersistentItem) o;
-            return Objects.equals(id, that.id) && Objects.equals(timestamp, that.timestamp) && Objects.equals(isArchived, that.isArchived) && Objects.equals(json, that.json);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, timestamp, isArchived, json);
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("id", id)
-                    .add("timestamp", timestamp)
-                    .add("isArchived", isArchived)
-                    .add("json", json)
-                    .toString();
-        }
     }
 
 

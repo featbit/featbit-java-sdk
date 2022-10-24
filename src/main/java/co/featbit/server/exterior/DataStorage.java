@@ -47,7 +47,7 @@ public interface DataStorage extends Closeable {
      * updated if the existing version is less than the new version; for inserts, if the version > the existing one, it will replace
      * the existing one.
      * <p>
-     * The SDK may pass an {@link co.featbit.server.exterior.DataStoreTypes.Item} that contains a archived object,
+     * The SDK may pass an {@link co.featbit.server.exterior.DataStoreTypes.Item} that contains an archived object,
      * In that case, assuming the version is greater than any existing version of that item, the store should retain
      * a placeholder rather than simply not storing anything.
      *

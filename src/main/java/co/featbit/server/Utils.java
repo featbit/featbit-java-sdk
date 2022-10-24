@@ -4,20 +4,23 @@ import co.featbit.server.exterior.HttpConfig;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import okhttp3.Authenticator;
+import okhttp3.Cache;
 import okhttp3.Credentials;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.commons.validator.routines.UrlValidator;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -127,20 +130,19 @@ public abstract class Utils {
         String part1 = encodeNumber(start, 3);
         String part2 = encodeNumber(timestampCode.length(), 2);
         String part3 = text.substring(0, start);
-        String part4 = timestampCode;
         String part5 = text.substring(start);
-        return String.format("%s%s%s%s%s", part1, part2, part3, part4, part5);
+        return String.format("%s%s%s%s%s", part1, part2, part3, timestampCode, part5);
     }
 
     // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-ok-http-client/#shutdown-isnt-necessary
     public static void shutdownOKHttpClient(String name, OkHttpClient client) {
+        Loggers.UTILS.trace("Shutdown the dispatcher’s executor service");
         client.dispatcher().executorService().shutdown();
+        Loggers.UTILS.trace("Clear the connection pool");
         client.connectionPool().evictAll();
-        if (client.cache() != null) {
-            try {
-                client.cache().close();
-            } catch (Exception ignore) {
-            }
+        try (Cache ignored = client.cache()) {
+            Loggers.UTILS.trace("If your client has a cache, call close()");
+        } catch (Exception ignore) {
         }
         Loggers.UTILS.debug("gracefully clean up okhttpclient in {}", name);
     }
@@ -162,14 +164,24 @@ public abstract class Utils {
         return bytes[3] << 24 | (bytes[2] & 255) << 16 | (bytes[1] & 255) << 8 | bytes[0] & 255;
     }
 
+    private static final List<String> SCHEMES = Arrays.asList("http", "https", "ws", "wss");
+
+    // https://blog.51cto.com/u_11440114/2987227
     public static boolean isUrl(String url) {
-        String[] schemes = {"http", "https", "ws", "wss"};
-        UrlValidator urlValidator = new UrlValidator(schemes);
-        return urlValidator.isValid(url);
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+        if (uri.getHost() == null) {
+            return false;
+        }
+        return SCHEMES.contains(uri.getScheme().toLowerCase());
     }
 
-    public static boolean checkType(String variationType, Class requiredType, String returnValue) {
-        if (StringUtils.isBlank(variationType) || variationType == null || returnValue == null) {
+    public static boolean checkType(String variationType, Class<?> requiredType, String returnValue) {
+        if (StringUtils.isBlank(variationType) || requiredType == null || returnValue == null) {
             return false;
         }
         switch (variationType) {
@@ -186,6 +198,7 @@ public abstract class Utils {
                 if (requiredType == Integer.class || requiredType == Long.class || requiredType == Double.class) {
                     return StringUtils.isNumeric(returnValue);
                 }
+                //others depend on the deserialization
                 return true;
             default:
                 return false;

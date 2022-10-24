@@ -181,7 +181,7 @@ public interface FFCClient extends Closeable {
      * Calculates the int value of a feature flag for a given user, and returns an object that describes the
      * way the value was determined.
      * <p>
-     * Note that If the variation has a numeric value, but not a int value, it is rounded toward zero(DOWN mode)
+     * Note that If the variation has a numeric value, but not an int value, it is rounded toward zero(DOWN mode)
      * <p>
      *
      * @param featureFlagKey the unique key for the feature flag

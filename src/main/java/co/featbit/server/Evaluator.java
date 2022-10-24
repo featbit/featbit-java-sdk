@@ -15,8 +15,6 @@ abstract class Evaluator {
     protected static final String DEFAULT_JSON_VALUE = "DJV";
     protected static final String REASON_USER_NOT_SPECIFIED = "user not specified";
     protected static final String REASON_FLAG_OFF = "flag off";
-
-    protected static final String REASON_PREREQUISITE_FAILED = "prerequisite failed";
     protected static final String REASON_TARGET_MATCH = "target match";
     protected static final String REASON_RULE_MATCH = "rule match";
     protected static final String REASON_FALLTHROUGH = "fall through all rules";

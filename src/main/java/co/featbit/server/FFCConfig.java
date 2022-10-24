@@ -24,9 +24,9 @@ public class FFCConfig {
     private boolean offline;
     private Duration startWaitTime;
 
-    private String streamingURI;
+    private String streamingURL;
 
-    private String eventURI;
+    private String eventURL;
 
     private FFCConfig() {
         super();
@@ -56,18 +56,18 @@ public class FFCConfig {
         return startWaitTime;
     }
 
-    public String getStreamingURI() {
-        return streamingURI;
+    public String getStreamingURL() {
+        return streamingURL;
     }
 
-    public String getEventURI() {
-        return eventURI;
+    public String getEventURL() {
+        return eventURL;
     }
 
     public FFCConfig(Builder builder) {
         this.offline = builder.offline;
-        this.streamingURI = builder.streamingURI;
-        this.eventURI = builder.eventURI;
+        this.streamingURL = builder.streamingURL;
+        this.eventURL = builder.eventURL;
         this.startWaitTime = builder.startWaitTime == null ? DEFAULT_START_WAIT_TIME : builder.startWaitTime;
         if (builder.offline) {
             Loggers.CLIENT.info("FFC JAVA SDK: SDK is in offline mode");
@@ -89,8 +89,8 @@ public class FFCConfig {
      * Builder to create advanced configuration options, calls can be chained.
      * <pre><code>
      *  FFCConfig config = new FFCConfig.Builder()
-     *                      .streamingURI("your streaming URI")
-     *                      .eventURI("your event URI")
+     *                      .streamingURL("your streaming URI")
+     *                      .eventURL("your event URI")
      *                     .startWaitTime(Duration.ZERO)
      *                     .offline(false)
      *                     .build()
@@ -105,9 +105,9 @@ public class FFCConfig {
         private Duration startWaitTime;
         private boolean offline = false;
 
-        private String streamingURI;
+        private String streamingURL;
 
-        private String eventURI;
+        private String eventURL;
 
         public Builder() {
             super();
@@ -143,7 +143,7 @@ public class FFCConfig {
         /**
          * Sets the SDK's networking configuration, using a factory object. Depending on the implementation,
          * the factory may be a builder that allows you to set other configuration options as well.
-         * This object by defaut is a configuration builder obtained from {@link Factory#httpConfigFactory()},
+         * This object by default is a configuration builder obtained from {@link Factory#httpConfigFactory()},
          *
          * @param httpConfigFactory a {@link HttpConfigFactory}
          * @return the builder
@@ -190,24 +190,24 @@ public class FFCConfig {
         }
 
         /**
-         * URI of your feature management platform to synchronise feature flags, user segments, etc.
+         * URL of your feature management platform to synchronise feature flags, user segments, etc.
          *
-         * @param streamingURI
+         * @param streamingURL streaming url
          * @return the builder
          */
-        public Builder streamingURI(String streamingURI) {
-            this.streamingURI = streamingURI;
+        public Builder streamingURL(String streamingURL) {
+            this.streamingURL = streamingURL;
             return this;
         }
 
         /**
-         * URI of your feature management platform to send analytics events
+         * URL of your feature management platform to send analytics events
          *
-         * @param eventURI
+         * @param eventURL event url
          * @return the builder
          */
-        public Builder eventURI(String eventURI) {
-            this.eventURI = eventURI;
+        public Builder eventURL(String eventURL) {
+            this.eventURL = eventURL;
             return this;
         }
 

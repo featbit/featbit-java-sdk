@@ -30,7 +30,7 @@ public abstract class StreamingBuilder implements DataSynchronizerFactory {
      * to be reestablished. The delay for the first reconnection will start near this value, and then
      * increase exponentially for any subsequent connection failures.
      *
-     * @param duration the reconnect time base value; null to use the default(1s)
+     * @param duration the reconnecting time base value; null to use the default(1s)
      * @return the builder
      */
     public StreamingBuilder firstRetryDelay(Duration duration) {

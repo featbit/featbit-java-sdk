@@ -24,8 +24,8 @@ To open the offline mode:
 ```java
 FFCConfig config = new FFCConfig.Builder()
                .offline(true)
-               .streamingURI("your streaming URI")
-               .eventURI("your event URI")
+               .streamingURL("your streaming URL")
+               .eventURL("your event URL")
                .build();
 ```
 
@@ -72,8 +72,8 @@ client(using `close()`). You can detect whether initialization has succeeded by 
 
 ```java
 FFCConfig config = new FFCConfig.Builder()
-        .streamingURI("your streaming URI")
-        .eventURI("your event URI")
+        .streamingURL("your streaming URL")
+        .eventURL("your event URL")
         .build();
 
 FFCClient client = new FFCClientImp(sdkKey, config);
@@ -88,8 +88,8 @@ point, you can use `getDataUpdateStatusProvider()`, which provides an asynchrono
 ```java
 FFCConfig config = new FFCConfig.Builder()
                .startWait(Duration.ZERO)
-               .streamingURI("your streaming URI")
-               .eventURI("your event URI")
+               .streamingURL("your streaming URL")
+               .eventURL("your event URL")
                .build();
 FFCClient client = new FFCClientImp(sdkKey, config);
     
@@ -104,11 +104,11 @@ Note that the _**sdkKey(envSecret)**_ is mandatory.
 
 ### FFCConfig and Components
 
-`streamingURI`: URI of your feature management platform to synchronise feature flags, user segments, etc.
+`streamingURL`: URL of your feature management platform to synchronise feature flags, user segments, etc.
 
-`eventURI`: URI of your feature management platform to send analytics events
+`eventURL`: URL of your feature management platform to send analytics events
 
-`streamingURI` and `eventURI` are required.
+`streamingURL` and `eventURL` are required.
 
 `startWaitTime`: how long the constructor will block awaiting a successful data sync. Setting this to a zero or negative
 duration will not block and cause the constructor to return immediately.
@@ -117,8 +117,8 @@ duration will not block and cause the constructor to return immediately.
 
 ```java
 FFCConfig config = new FFCConfig.Builder()
-                .streamingURI("your streaming URI")
-                .eventURI("your event URI")
+                .streamingURL("your streaming URL")
+                .eventURL("your event URL")
                 .build()
 FFCClient client = new FFCClientImp(sdkKey, config);
 ```
@@ -170,7 +170,7 @@ The `key` must uniquely identify each user; this could be a username or email ad
 The `userName` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
 
 ```java
-FFCClient client = new FFCClientImp(envSecret);
+FFCClient client = new FFCClientImp(sdkKey, config);
 
 // FFUser creation
 FFCUser user = new FFCUser.Builder("key")
