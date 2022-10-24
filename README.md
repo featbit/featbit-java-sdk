@@ -17,12 +17,12 @@ We use websocket to make the local data synchronized with the server, and then s
 
 In the offline mode, SDK DOES not exchange any data with your feature management platform
 
-In the following situation, the SDK would work when there is no internet connection: it has been initialized in using `co.featbit.server.exterior.FFCClient#initializeFromExternalJson(json)`
+In the following situation, the SDK would work when there is no internet connection: it has been initialized in using `co.featbit.server.exterior.FBClient#initializeFromExternalJson(json)`
 
 To open the offline mode:
 
 ```java
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
                .offline(true)
                .streamingURL("your streaming URL")
                .eventURL("your event URL")
@@ -52,7 +52,7 @@ install the sdk in using maven
 
 ## SDK
 
-### FFCClient
+### FBClient
 
 Applications SHOULD instantiate a single instance for the lifetime of the application. In the case where an application
 needs to evaluate feature flags from different environments, you may create multiple clients, but they should still be
@@ -60,23 +60,23 @@ retained for the lifetime of the application rather than created per request or 
 
 ### Bootstrapping
 
-The bootstrapping is in fact the call of constructor of `FFCClientImp`, in which the SDK will be initialized, using
+The bootstrapping is in fact the call of constructor of `FBClientImp`, in which the SDK will be initialized, using
 streaming from your feature management platform.
 
 The constructor will return when it successfully connects, or when the timeout set
-by `FFCConfig.Builder#startWaitTime(Duration)`
+by `FBConfig.Builder#startWaitTime(Duration)`
 (default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses,
 you will receive the client in an uninitialized state where feature flags will return default values; it will still
 continue trying to connect in the background unless there has been an `java.net.ProtocolException` or you close the
 client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`.
 
 ```java
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
         .streamingURL("your streaming URL")
         .eventURL("your event URL")
         .build();
 
-FFCClient client = new FFCClientImp(sdkKey, config);
+FBClient client = new FBClientImp(sdkKey, config);
 if(client.isInitialized()){
 // do whatever is appropriate
 }
@@ -86,12 +86,12 @@ If you prefer to have the constructor return immediately, and then wait for init
 point, you can use `getDataUpdateStatusProvider()`, which provides an asynchronous way, as follows:
 
 ```java
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
                .startWait(Duration.ZERO)
                .streamingURL("your streaming URL")
                .eventURL("your event URL")
                .build();
-FFCClient client = new FFCClientImp(sdkKey, config);
+FBClient client = new FBClientImp(sdkKey, config);
     
 // later, when you want to wait for initialization to finish:
 boolean inited = client.getDataUpdateStatusProvider().waitForOKState(Duration.ofSeconds(15))
@@ -102,7 +102,7 @@ if (inited) {
 
 Note that the _**sdkKey(envSecret)**_ is mandatory.
 
-### FFCConfig and Components
+### FBConfig and Components
 
 `streamingURL`: URL of your feature management platform to synchronise feature flags, user segments, etc.
 
@@ -116,14 +116,14 @@ duration will not block and cause the constructor to return immediately.
 `offline`: Set whether SDK is offline. when set to true no connection to your feature management platform anymore
 
 ```java
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
                 .streamingURL("your streaming URL")
                 .eventURL("your event URL")
                 .build()
-FFCClient client = new FFCClientImp(sdkKey, config);
+FBClient client = new FBClientImp(sdkKey, config);
 ```
 
-`FFCConfig` provides advanced configuration options for setting the SDK component or you want to customize the behavior
+`FBConfig` provides advanced configuration options for setting the SDK component or you want to customize the behavior
 of build-in components.
 
 `HttpConfigFactory`: Interface for a factory that creates an `HttpConfig`. SDK sets the SDK's networking configuration,
@@ -135,7 +135,7 @@ HttpConfigFactory factory = Factory.httpConfigFactory()
         .connectTime(Duration.ofMillis(3000))
         .httpProxy("my-proxy", 9000)
 
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
         .httpConfigFactory(factory)
         .build();
 ```
@@ -146,7 +146,7 @@ user segments or any other related data received by the SDK. SDK sets the implem
 to instantiate a memory data storage. Developers can customize the data storage to persist received data in redis, mongodb, etc.
 
 ```java
-FFCConfig config = new FFCConfig.Builder()
+FBConfig config = new FBConfig.Builder()
         .dataStorageFactory(factory)
         .build();
 ```
@@ -170,10 +170,10 @@ The `key` must uniquely identify each user; this could be a username or email ad
 The `userName` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
 
 ```java
-FFCClient client = new FFCClientImp(sdkKey, config);
+FBClient client = new FBClientImp(sdkKey, config);
 
 // FFUser creation
-FFCUser user = new FFCUser.Builder("key")
+FBUser user = new FBUser.Builder("key")
     .userName("name")
     .custom("property", "value")
     .build()

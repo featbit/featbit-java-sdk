@@ -1,6 +1,6 @@
 package co.featbit.server.exterior;
 
-import co.featbit.server.FFCConfig;
+import co.featbit.server.FBConfig;
 import co.featbit.server.Factory;
 import co.featbit.server.Utils;
 import okhttp3.Authenticator;
@@ -16,9 +16,9 @@ import java.time.Duration;
  * Contains methods for configuring the SDK's networking behavior.
  * <p>
  * If you want to set non-default values, create a builder with {@link Factory#httpConfigFactory()},
- * change its properties with the methods of this class and pass it to {@link FFCConfig.Builder#httpConfigFactory(HttpConfigFactory)}:
+ * change its properties with the methods of this class and pass it to {@link FBConfig.Builder#httpConfigFactory(HttpConfigFactory)}:
  * <pre><code>
- *      FFCConfig config = new FFCConfig.Builder()
+ *      FBConfig config = new FBConfig.Builder()
  *                     .httpConfigFactory(Factory.httpConfigFactory()
  *                             .connectTime(Duration.ofMillis(3000))
  *                             .httpProxy("my-proxy", 9000))

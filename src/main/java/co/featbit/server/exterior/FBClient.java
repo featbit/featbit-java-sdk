@@ -1,8 +1,9 @@
 package co.featbit.server.exterior;
 
 import co.featbit.commons.model.AllFlagStates;
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.FlagState;
+import co.featbit.server.FBClientImp;
 import co.featbit.server.Status;
 
 import java.io.Closeable;
@@ -10,12 +11,12 @@ import java.util.Map;
 
 
 /**
- * This interface defines the public methods of {@link co.featbit.server.FFCClientImp}.
+ * This interface defines the public methods of {@link FBClientImp}.
  * <p>
- * Applications will normally interact directly with {@link co.featbit.server.FFCClientImp}
+ * Applications will normally interact directly with {@link FBClientImp}
  * and must use its constructor to initialize the SDK.
  */
-public interface FFCClient extends Closeable {
+public interface FBClient extends Closeable {
     /**
      * Tests whether the client is ready to be used.
      *
@@ -32,7 +33,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return the variation for the given user, or {@code defaultValue} if the flag is disabled or an error occurs
      */
-    String variation(String featureFlagKey, FFCUser user, String defaultValue);
+    String variation(String featureFlagKey, FBUser user, String defaultValue);
 
     /**
      * Calculates the boolean value of a feature flag for a given user.
@@ -43,7 +44,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return if the flag should be enabled, or {@code defaultValue} if the flag is disabled or an error occurs
      */
-    boolean boolVariation(String featureFlagKey, FFCUser user, Boolean defaultValue);
+    boolean boolVariation(String featureFlagKey, FBUser user, Boolean defaultValue);
 
     /**
      * alias of boolVariation for a given user
@@ -52,7 +53,7 @@ public interface FFCClient extends Closeable {
      * @param user           the end user requesting the flag
      * @return if the flag should be enabled, or false if the flag is disabled, or an error occurs
      */
-    boolean isEnabled(String featureFlagKey, FFCUser user);
+    boolean isEnabled(String featureFlagKey, FBUser user);
 
     /**
      * Calculates the double value of a feature flag for a given user.
@@ -63,7 +64,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return the variation for the given user, or {@code defaultValue} if the flag is disabled or an error occurs
      */
-    double doubleVariation(String featureFlagKey, FFCUser user, Double defaultValue);
+    double doubleVariation(String featureFlagKey, FBUser user, Double defaultValue);
 
     /**
      * Calculates the integer value of a feature flag for a given user.
@@ -75,7 +76,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return the variation for the given user, or {@code defaultValue} if the flag is disabled or an error occurs
      */
-    int intVariation(String featureFlagKey, FFCUser user, Integer defaultValue);
+    int intVariation(String featureFlagKey, FBUser user, Integer defaultValue);
 
     /**
      * Calculates the long value of a feature flag for a given user.
@@ -87,7 +88,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return the variation for the given user, or {@code defaultValue} if the flag is disabled or an error occurs
      */
-    long longVariation(String featureFlagKey, FFCUser user, Long defaultValue);
+    long longVariation(String featureFlagKey, FBUser user, Long defaultValue);
 
     /**
      * Calculates the json value of a feature flag for a given user.
@@ -99,7 +100,7 @@ public interface FFCClient extends Closeable {
      * @param <T>            json object type
      * @return the variation for the given user, or {@code defaultValue} if the flag is disabled, current user doesn't exist
      */
-    <T> T jsonVariation(String featureFlagKey, FFCUser user, Class<T> clazz, T defaultValue);
+    <T> T jsonVariation(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue);
 
     /**
      * Returns true if the specified feature flag currently exists.
@@ -139,7 +140,7 @@ public interface FFCClient extends Closeable {
      * @param user the end user requesting the flag
      * @return a {@link AllFlagStates}
      */
-    AllFlagStates<String> getAllLatestFlagsVariations(FFCUser user);
+    AllFlagStates<String> getAllLatestFlagsVariations(FBUser user);
 
     /**
      * Calculates the value of a feature flag for a given user, and returns an object that describes the
@@ -151,7 +152,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return an {@link FlagState} object
      */
-    FlagState<String> variationDetail(String featureFlagKey, FFCUser user, String defaultValue);
+    FlagState<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue);
 
     /**
      * Calculates the value of a feature flag for a given user, and returns an object that describes the
@@ -163,7 +164,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return an {@link FlagState} object
      */
-    FlagState<Boolean> boolVariationDetail(String featureFlagKey, FFCUser user, Boolean defaultValue);
+    FlagState<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue);
 
     /**
      * Calculates the double value of a feature flag for a given user, and returns an object that describes the
@@ -175,7 +176,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return an {@link FlagState} object
      */
-    FlagState<Double> doubleVariationDetail(String featureFlagKey, FFCUser user, Double defaultValue);
+    FlagState<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue);
 
     /**
      * Calculates the int value of a feature flag for a given user, and returns an object that describes the
@@ -189,7 +190,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return an {@link FlagState} object
      */
-    FlagState<Integer> intVariationDetail(String featureFlagKey, FFCUser user, Integer defaultValue);
+    FlagState<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue);
 
     /**
      * Calculates the long value of a feature flag for a given user, and returns an object that describes the
@@ -203,7 +204,7 @@ public interface FFCClient extends Closeable {
      * @param defaultValue   the default value of the flag
      * @return an {@link FlagState} object
      */
-    FlagState<Long> longVariationDetail(String featureFlagKey, FFCUser user, Long defaultValue);
+    FlagState<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue);
 
     /**
      * Calculates the json value of a feature flag for a given user, and returns an object that describes the
@@ -216,7 +217,7 @@ public interface FFCClient extends Closeable {
      * @param <T>            json object type
      * @return an {@link FlagState} object
      */
-    <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FFCUser user, Class<T> clazz, T defaultValue);
+    <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue);
 
     /**
      * Flushes all pending events.
@@ -229,7 +230,7 @@ public interface FFCClient extends Closeable {
      * @param user      the user that performed the event
      * @param eventName the name of the event
      */
-    void trackMetric(FFCUser user, String eventName);
+    void trackMetric(FBUser user, String eventName);
 
     /**
      * tracks that a user performed an event, and provides an additional numeric value for custom metrics.
@@ -238,7 +239,7 @@ public interface FFCClient extends Closeable {
      * @param eventName   the name of the event
      * @param metricValue a numeric value used by the experimentation feature in numeric custom metrics.
      */
-    void trackMetric(FFCUser user, String eventName, double metricValue);
+    void trackMetric(FBUser user, String eventName, double metricValue);
 
     /**
      * tracks that a user performed a series of events with default numeric value for custom metrics
@@ -246,7 +247,7 @@ public interface FFCClient extends Closeable {
      * @param user       the user that performed the event
      * @param eventNames event names
      */
-    void trackMetrics(FFCUser user, String... eventNames);
+    void trackMetrics(FBUser user, String... eventNames);
 
     /**
      * tracks that a user performed a series of events
@@ -254,5 +255,5 @@ public interface FFCClient extends Closeable {
      * @param user    the user that performed the event
      * @param metrics event name and numeric value in K/V
      */
-    void trackMetrics(FFCUser user, Map<String, Double> metrics);
+    void trackMetrics(FBUser user, Map<String, Double> metrics);
 }

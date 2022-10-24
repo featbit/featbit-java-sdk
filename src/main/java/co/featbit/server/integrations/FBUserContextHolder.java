@@ -1,14 +1,14 @@
 package co.featbit.server.integrations;
 
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import com.alibaba.ttl.TransmittableThreadLocal;
 
-public class FFCUserContextHolder {
-    private static final ThreadLocal<FFCUser> userThreadLocal = new ThreadLocal<>();
-    private static final TransmittableThreadLocal<FFCUser> inheritedUserThreadLocal = new TransmittableThreadLocal<>();
+public class FBUserContextHolder {
+    private static final ThreadLocal<FBUser> userThreadLocal = new ThreadLocal<>();
+    private static final TransmittableThreadLocal<FBUser> inheritedUserThreadLocal = new TransmittableThreadLocal<>();
 
-    public static FFCUser getCurrentUser() {
-        FFCUser user = inheritedUserThreadLocal.get();
+    public static FBUser getCurrentUser() {
+        FBUser user = inheritedUserThreadLocal.get();
         if (user == null) {
             user = userThreadLocal.get();
         }
@@ -20,7 +20,7 @@ public class FFCUserContextHolder {
         inheritedUserThreadLocal.remove();
     }
 
-    public static void setCurrentUser(FFCUser user, boolean inherit) {
+    public static void setCurrentUser(FBUser user, boolean inherit) {
         if (inherit) {
             inheritedUserThreadLocal.set(user);
         } else {

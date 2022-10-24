@@ -20,17 +20,17 @@ import static com.google.common.base.Preconditions.checkArgument;
  * The custom properties are optional, you may also define custom properties with arbitrary names and values.
  */
 
-public final class FFCUser implements Serializable {
+public final class FBUser implements Serializable {
 
-    private final static Function<FFCUser, String> USERNAME = u -> u.userName;
-    private final static Function<FFCUser, String> KEY = u -> u.key;
-    private final static Map<String, Function<FFCUser, String>> BUILTINS = ImmutableMap.of("name", USERNAME, "keyid", KEY);
+    private final static Function<FBUser, String> USERNAME = u -> u.userName;
+    private final static Function<FBUser, String> KEY = u -> u.key;
+    private final static Map<String, Function<FBUser, String>> BUILTINS = ImmutableMap.of("name", USERNAME, "keyid", KEY);
     private final String userName;
     private final String key;
     private final Map<String, String> custom;
 
 
-    private FFCUser(Builder builder) {
+    private FBUser(Builder builder) {
         String key = builder.key;
         String userName = builder.userName;
         checkArgument(StringUtils.isNotBlank(key), "Key shouldn't be empty");
@@ -81,7 +81,7 @@ public final class FFCUser implements Serializable {
      * @return the attribute value or null
      */
     public String getProperty(String attribute) {
-        Function<FFCUser, String> f = BUILTINS.get(attribute.toLowerCase());
+        Function<FBUser, String> f = BUILTINS.get(attribute.toLowerCase());
         if (f == null) {
             return custom.get(attribute);
         }
@@ -101,8 +101,8 @@ public final class FFCUser implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        FFCUser ffcUser = (FFCUser) o;
-        return Objects.equals(userName, ffcUser.userName) && Objects.equals(key, ffcUser.key) && Objects.equals(custom, ffcUser.custom);
+        FBUser user = (FBUser) o;
+        return Objects.equals(userName, user.userName) && Objects.equals(key, user.key) && Objects.equals(custom, user.custom);
     }
 
     @Override
@@ -111,9 +111,9 @@ public final class FFCUser implements Serializable {
     }
 
     /**
-     * A builder  that helps construct FFCClient objects. Builder calls can be chained, supporting the following pattern:
+     * A builder  that helps construct FBUser objects. Builder calls can be chained, supporting the following pattern:
      * <pre><code>
-     *     FFCClient user = new FFCClient.Builder("key")
+     *     FBUser user = new FBUser.Builder("key")
      *               .userName("name")
      *               .custom("property", "value")
      *               .build()
@@ -174,11 +174,11 @@ public final class FFCUser implements Serializable {
         }
 
         /**
-         * Builds the configured FFCUser object.
-         * Returns the FFCUser configured by this builder
+         * Builds the configured FBUser object.
+         * Returns the FBUser configured by this builder
          */
-        public FFCUser build() {
-            return new FFCUser(this);
+        public FBUser build() {
+            return new FBUser(this);
         }
     }
 

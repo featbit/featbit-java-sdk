@@ -3,17 +3,17 @@ package co.featbit.server;
 import co.featbit.server.exterior.DataStorageFactory;
 import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.DataSynchronizerFactory;
-import co.featbit.server.exterior.FFCClient;
+import co.featbit.server.exterior.FBClient;
 import co.featbit.server.exterior.HttpConfigFactory;
 import co.featbit.server.exterior.InsightProcessorFactory;
 
 import java.time.Duration;
 
 /**
- * This class exposes advanced configuration options for the {@link FFCClient}
+ * This class exposes advanced configuration options for the {@link FBClient}
  * Instances of this class must be constructed with a {@link Builder}.
  */
-public class FFCConfig {
+public class FBConfig {
     static final Duration DEFAULT_START_WAIT_TIME = Duration.ofSeconds(15);
 
     private DataStorageFactory dataStorageFactory;
@@ -28,7 +28,7 @@ public class FFCConfig {
 
     private String eventURL;
 
-    private FFCConfig() {
+    private FBConfig() {
         super();
     }
 
@@ -64,7 +64,7 @@ public class FFCConfig {
         return eventURL;
     }
 
-    public FFCConfig(Builder builder) {
+    public FBConfig(Builder builder) {
         this.offline = builder.offline;
         this.streamingURL = builder.streamingURL;
         this.eventURL = builder.eventURL;
@@ -88,7 +88,7 @@ public class FFCConfig {
     /**
      * Builder to create advanced configuration options, calls can be chained.
      * <pre><code>
-     *  FFCConfig config = new FFCConfig.Builder()
+     *  FBConfig config = new FBConfig.Builder()
      *                      .streamingURL("your streaming URI")
      *                      .eventURL("your event URI")
      *                     .startWaitTime(Duration.ZERO)
@@ -212,12 +212,12 @@ public class FFCConfig {
         }
 
         /**
-         * Builds the configured {@link FFCConfig}
+         * Builds the configured {@link FBConfig}
          *
-         * @return a {@link FFCConfig} instance
+         * @return a {@link FBConfig} instance
          */
-        public FFCConfig build() {
-            return new FFCConfig(this);
+        public FBConfig build() {
+            return new FBConfig(this);
         }
 
     }

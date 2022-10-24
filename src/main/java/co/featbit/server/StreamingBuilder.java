@@ -8,14 +8,14 @@ import java.time.Duration;
  * Factory to create a {@link Streaming} implementation
  * By default, the SDK uses a streaming connection to receive feature flag data. If you want to customize the behavior of the connection,
  * create a builder with {@link Factory#dataSynchronizerFactory()}, change its properties with the methods of this class,
- * and pass it to {@link FFCConfig.Builder#dataSynchronizerFactory(DataSynchronizerFactory)}:
+ * and pass it to {@link FBConfig.Builder#dataSynchronizerFactory(DataSynchronizerFactory)}:
  * <pre><code>
  *      StreamingBuilder streamingBuilder = Factory.streamingBuilder()
  *           .firstRetryDelay(Duration.ofSeconds(1));
- *       FFCConfig config = new FFCConfig.Builder()
+ *       FBConfig config = new FBConfig.Builder()
  *           .updateProcessorFactory(streamingBuilder)
  *           .build();
- *       FFCClient client = new FFCClientImp(envSecret, config);
+ *       FBClient client = new FBClientImp(envSecret, config);
  * </code></pre>
  */
 public abstract class StreamingBuilder implements DataSynchronizerFactory {

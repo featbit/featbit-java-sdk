@@ -1,7 +1,7 @@
 package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.BooleanUtils;
@@ -21,7 +21,7 @@ final class EvaluatorImp extends Evaluator {
     }
 
     @Override
-    EvalResult evaluate(DataModel.FeatureFlag flag, FFCUser user, InsightTypes.Event event) {
+    EvalResult evaluate(DataModel.FeatureFlag flag, FBUser user, InsightTypes.Event event) {
         if (user == null || flag == null) {
             throw new IllegalArgumentException("null flag or empty user");
         }
@@ -29,7 +29,7 @@ final class EvaluatorImp extends Evaluator {
 
     }
 
-    private EvalResult matchUserVariation(DataModel.FeatureFlag flag, FFCUser user, InsightTypes.Event event) {
+    private EvalResult matchUserVariation(DataModel.FeatureFlag flag, FBUser user, InsightTypes.Event event) {
         //return a value when flag is off or not match prerequisite rule
         EvalResult er = null;
         try {
@@ -70,7 +70,7 @@ final class EvaluatorImp extends Evaluator {
         return null;
     }
 
-    private EvalResult matchTargetedUserVariation(DataModel.FeatureFlag featureFlag, FFCUser user) {
+    private EvalResult matchTargetedUserVariation(DataModel.FeatureFlag featureFlag, FBUser user) {
         return featureFlag.getTargetUsers().stream()
                 .filter(target -> target.isTargeted(user.getKey()))
                 .findFirst()
@@ -82,7 +82,7 @@ final class EvaluatorImp extends Evaluator {
                 .orElse(null);
     }
 
-    private EvalResult matchConditionedUserVariation(DataModel.FeatureFlag featureFlag, FFCUser user) {
+    private EvalResult matchConditionedUserVariation(DataModel.FeatureFlag featureFlag, FBUser user) {
         DataModel.TargetRule targetRule = featureFlag.getRules().stream().filter(rule -> ifUserMatchRule(user, rule.getConditions())).findFirst().orElse(null);
         // optional flatmap can't infer inner type of collection
         return targetRule == null ? null : getRollOutVariationOption(featureFlag,
@@ -95,11 +95,11 @@ final class EvaluatorImp extends Evaluator {
                 featureFlag.getName());
     }
 
-    private boolean ifUserMatchRule(FFCUser user, List<DataModel.Condition> conditions) {
+    private boolean ifUserMatchRule(FBUser user, List<DataModel.Condition> conditions) {
         return conditions.stream().allMatch(condition -> ifUserMatchClause(user, condition));
     }
 
-    private boolean ifUserMatchClause(FFCUser user, DataModel.Condition condition) {
+    private boolean ifUserMatchClause(FBUser user, DataModel.Condition condition) {
         String op = condition.getOp();
         // segment hasn't any operation
         op = StringUtils.isBlank(op) ? condition.getProperty() : op;
@@ -137,7 +137,7 @@ final class EvaluatorImp extends Evaluator {
         return false;
     }
 
-    private boolean inSegmentClause(FFCUser user, DataModel.Condition condition) {
+    private boolean inSegmentClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getKey();
         try {
             List<String> segments = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
@@ -160,30 +160,30 @@ final class EvaluatorImp extends Evaluator {
         }
     }
 
-    private boolean trueClause(FFCUser user, DataModel.Condition condition) {
+    private boolean trueClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         return pv != null && BooleanUtils.toBoolean(pv);
     }
 
-    private boolean matchRegExClause(FFCUser user, DataModel.Condition condition) {
+    private boolean matchRegExClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         return pv != null && Pattern.compile(condValue).matcher(pv).matches();
     }
 
-    private boolean endsWithClause(FFCUser user, DataModel.Condition condition) {
+    private boolean endsWithClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         return pv != null && pv.endsWith(condValue);
     }
 
-    private boolean startsWithClause(FFCUser user, DataModel.Condition condition) {
+    private boolean startsWithClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         return pv != null && pv.startsWith(condValue);
     }
 
-    private boolean thanClause(FFCUser user, DataModel.Condition condition) {
+    private boolean thanClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         if (!StringUtils.isNumeric(pv) || !StringUtils.isNumeric(condValue)) {
@@ -205,19 +205,19 @@ final class EvaluatorImp extends Evaluator {
         }
     }
 
-    private boolean equalsClause(FFCUser user, DataModel.Condition condition) {
+    private boolean equalsClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         return condValue.equals(pv);
     }
 
-    private boolean containsClause(FFCUser user, DataModel.Condition condition) {
+    private boolean containsClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
         return pv != null && pv.contains(condValue);
     }
 
-    private boolean oneOfClause(FFCUser user, DataModel.Condition condition) {
+    private boolean oneOfClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         try {
             List<String> clauseValues = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
@@ -228,7 +228,7 @@ final class EvaluatorImp extends Evaluator {
         }
     }
 
-    private EvalResult matchFallThroughUserVariation(DataModel.FeatureFlag featureFlag, FFCUser user) {
+    private EvalResult matchFallThroughUserVariation(DataModel.FeatureFlag featureFlag, FBUser user) {
         DataModel.Fallthrough fallthrough = featureFlag.getFallthrough();
         return getRollOutVariationOption(
                 featureFlag,
@@ -243,7 +243,7 @@ final class EvaluatorImp extends Evaluator {
 
     private EvalResult getRollOutVariationOption(DataModel.FeatureFlag featureFlag,
                                                  Collection<DataModel.RolloutVariation> rollouts,
-                                                 FFCUser user,
+                                                 FBUser user,
                                                  String reason,
                                                  Boolean exptIncludeAllTargets,
                                                  Boolean ruleIncludedInExperiment,

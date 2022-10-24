@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * an object provides the user tags used to instantiate the FFCUser
+ * an object provides the user tags used to instantiate the FBUser
  */
 public class UserTag implements Serializable {
 
@@ -22,7 +22,7 @@ public class UserTag implements Serializable {
     /**
      * @param requestProperty tag name in http request
      * @param source          tag source: header, query string, cookie or post body
-     * @param userProperty    tag name in {@link FFCUser}
+     * @param userProperty    tag name in {@link FBUser}
      */
     public UserTag(String requestProperty, String source, String userProperty) {
         this.requestProperty = requestProperty;
@@ -35,7 +35,7 @@ public class UserTag implements Serializable {
      *
      * @param requestProperty tag name in http request
      * @param source          tag source: header, query string, cookie or post body
-     * @param userProperty    tag name in {@link FFCUser}
+     * @param userProperty    tag name in {@link FBUser}
      * @return a User tag
      */
     public static UserTag of(String requestProperty, String source, String userProperty) {
@@ -61,7 +61,7 @@ public class UserTag implements Serializable {
     }
 
     /**
-     * return the property name of {@link FFCUser}
+     * return the property name of {@link FBUser}
      *
      * @return a string or null
      */
