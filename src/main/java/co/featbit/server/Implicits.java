@@ -12,7 +12,7 @@ abstract class Implicits {
 
         private transient final Consumer<InsightTypes.Event> eventHandler;
 
-        private transient Map<EvalDetail<T>, InsightTypes.Event> complexData;
+        private transient final Map<EvalDetail<T>, InsightTypes.Event> complexData;
 
 
         ComplexAllFlagStates(boolean success,
@@ -25,8 +25,8 @@ abstract class Implicits {
         }
 
         @Override
-        public EvalDetail get(String flagKeyName) {
-            EvalDetail ed = super.get(flagKeyName);
+        public EvalDetail<T> get(String flagKeyName) {
+            EvalDetail<T> ed = super.get(flagKeyName);
             if (ed != null && eventHandler != null && complexData != null) {
                 InsightTypes.Event event = complexData.get(ed);
                 eventHandler.accept(event);

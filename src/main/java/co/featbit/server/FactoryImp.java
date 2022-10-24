@@ -5,13 +5,13 @@ import co.featbit.server.exterior.Context;
 import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageFactory;
 import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataSynchronizer;
+import co.featbit.server.exterior.DataSynchronizerFactory;
 import co.featbit.server.exterior.DefaultSender;
 import co.featbit.server.exterior.HttpConfig;
 import co.featbit.server.exterior.HttpConfigurationBuilder;
 import co.featbit.server.exterior.InsightProcessor;
 import co.featbit.server.exterior.InsightProcessorFactory;
-import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.DataSynchronizerFactory;
 import com.google.common.collect.ImmutableMap;
 
 import java.time.Duration;
@@ -25,7 +25,7 @@ abstract class FactoryImp {
         public HttpConfig createHttpConfig(BasicConfig config) {
             connectTime = connectTime == null ? DEFAULT_CONN_TIME : connectTime;
             socketTime = socketTime == null ? DEFAULT_SOCK_TIME : socketTime;
-            return new HttpConfingImpl(connectTime,
+            return new HttpConfigImpl(connectTime,
                     socketTime,
                     proxy,
                     authenticator,
@@ -38,10 +38,10 @@ abstract class FactoryImp {
 
     static final class StreamingBuilderImpl extends StreamingBuilder {
         @Override
-        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdator dataUpdator) {
+        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdater dataUpdater) {
             Loggers.UPDATE_PROCESSOR.debug("Choose Streaming Update Processor");
             firstRetryDelay = firstRetryDelay == null ? DEFAULT_FIRST_RETRY_DURATION : firstRetryDelay;
-            return new Streaming(dataUpdator, config, firstRetryDelay, maxRetryTimes);
+            return new Streaming(dataUpdater, config, firstRetryDelay, maxRetryTimes);
         }
     }
 
@@ -109,22 +109,22 @@ abstract class FactoryImp {
         static final NullDataSynchronizerFactory SINGLETON = new NullDataSynchronizerFactory();
 
         @Override
-        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdator dataUpdator) {
+        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdater dataUpdater) {
             if (config.basicConfig().isOffline()) {
                 Loggers.CLIENT.debug("SDK is in offline mode");
             } else {
-                Loggers.CLIENT.debug("SDK won't connect to featureflag.co");
+                Loggers.CLIENT.debug("SDK won't connect to feature flag center");
             }
-            return new NullDataSynchronizer(dataUpdator);
+            return new NullDataSynchronizer(dataUpdater);
         }
     }
 
     private static final class NullDataSynchronizer implements DataSynchronizer {
 
-        private final Status.DataUpdator dataUpdator;
+        private final Status.DataUpdater dataUpdater;
 
-        NullDataSynchronizer(Status.DataUpdator dataUpdator) {
-            this.dataUpdator = dataUpdator;
+        NullDataSynchronizer(Status.DataUpdater dataUpdater) {
+            this.dataUpdater = dataUpdater;
         }
 
         @Override
@@ -134,7 +134,7 @@ abstract class FactoryImp {
 
         @Override
         public boolean isInitialized() {
-            return dataUpdator.storageInitialized();
+            return dataUpdater.storageInitialized();
         }
 
         @Override
@@ -154,7 +154,7 @@ abstract class FactoryImp {
         @Override
         public InsightProcessor createInsightProcessor(Context context) {
             DefaultSender sender = createInsightEventSender(context);
-            return new Insights.InsightProcessorImpl(context.basicConfig().getEventURL(),
+            return new Insights.InsightProcessorImpl(context.basicConfig().getEventURI(),
                     sender,
                     Math.max(DEFAULT_FLUSH_INTERVAL, flushInterval),
                     Math.max(DEFAULT_CAPACITY, capacity));

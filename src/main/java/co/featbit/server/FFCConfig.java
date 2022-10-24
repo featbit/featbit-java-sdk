@@ -2,10 +2,10 @@ package co.featbit.server;
 
 import co.featbit.server.exterior.DataStorageFactory;
 import co.featbit.server.exterior.DataSynchronizer;
+import co.featbit.server.exterior.DataSynchronizerFactory;
+import co.featbit.server.exterior.FFCClient;
 import co.featbit.server.exterior.HttpConfigFactory;
 import co.featbit.server.exterior.InsightProcessorFactory;
-import co.featbit.server.exterior.FFCClient;
-import co.featbit.server.exterior.DataSynchronizerFactory;
 
 import java.time.Duration;
 
@@ -24,9 +24,9 @@ public class FFCConfig {
     private boolean offline;
     private Duration startWaitTime;
 
-    private String streamingURI;
+    private String streamingURL;
 
-    private String eventURI;
+    private String eventURL;
 
     private FFCConfig() {
         super();
@@ -56,18 +56,18 @@ public class FFCConfig {
         return startWaitTime;
     }
 
-    public String getStreamingURI() {
-        return streamingURI;
+    public String getStreamingURL() {
+        return streamingURL;
     }
 
-    public String getEventURI() {
-        return eventURI;
+    public String getEventURL() {
+        return eventURL;
     }
 
     public FFCConfig(Builder builder) {
         this.offline = builder.offline;
-        this.streamingURI = builder.streamingURI;
-        this.eventURI = builder.eventURI;
+        this.streamingURL = builder.streamingURL;
+        this.eventURL = builder.eventURL;
         this.startWaitTime = builder.startWaitTime == null ? DEFAULT_START_WAIT_TIME : builder.startWaitTime;
         if (builder.offline) {
             Loggers.CLIENT.info("FFC JAVA SDK: SDK is in offline mode");
@@ -89,6 +89,8 @@ public class FFCConfig {
      * Builder to create advanced configuration options, calls can be chained.
      * <pre><code>
      *  FFCConfig config = new FFCConfig.Builder()
+     *                      .streamingURL("your streaming URI")
+     *                      .eventURL("your event URI")
      *                     .startWaitTime(Duration.ZERO)
      *                     .offline(false)
      *                     .build()
@@ -103,9 +105,9 @@ public class FFCConfig {
         private Duration startWaitTime;
         private boolean offline = false;
 
-        private String streamingURI;
+        private String streamingURL;
 
-        private String eventURI;
+        private String eventURL;
 
         public Builder() {
             super();
@@ -126,14 +128,14 @@ public class FFCConfig {
 
         /**
          * Sets the implementation of the {@link DataSynchronizer} that receives feature flag data
-         * from featureflag.co, using a factory object. Depending on the implementation, the factory may be a builder that
+         * from feature flag center, using a factory object. Depending on the implementation, the factory may be a builder that
          * allows you to set other configuration options as well.
          * The default is{@link Factory#dataSynchronizerFactory()}
          *
          * @param dataSynchronizerFactory an {@link DataSynchronizerFactory} instance
          * @return the builder
          */
-        public Builder updateProcessorFactory(DataSynchronizerFactory dataSynchronizerFactory) {
+        public Builder dataSynchronizerFactory(DataSynchronizerFactory dataSynchronizerFactory) {
             this.dataSynchronizerFactory = dataSynchronizerFactory;
             return this;
         }
@@ -141,7 +143,7 @@ public class FFCConfig {
         /**
          * Sets the SDK's networking configuration, using a factory object. Depending on the implementation,
          * the factory may be a builder that allows you to set other configuration options as well.
-         * This object by defaut is a configuration builder obtained from {@link Factory#httpConfigFactory()},
+         * This object by default is a configuration builder obtained from {@link Factory#httpConfigFactory()},
          *
          * @param httpConfigFactory a {@link HttpConfigFactory}
          * @return the builder
@@ -167,7 +169,7 @@ public class FFCConfig {
         /**
          * Set whether SDK is offline.
          *
-         * @param offline when set to true no connection to featureflag.co any more
+         * @param offline when set to true no connection to feature flag center
          * @return the builder
          */
         public Builder offline(boolean offline) {
@@ -187,13 +189,25 @@ public class FFCConfig {
             return this;
         }
 
-        public Builder streamingURI(String streamingURI) {
-            this.streamingURI = streamingURI;
+        /**
+         * URL of your feature management platform to synchronise feature flags, user segments, etc.
+         *
+         * @param streamingURL streaming url
+         * @return the builder
+         */
+        public Builder streamingURL(String streamingURL) {
+            this.streamingURL = streamingURL;
             return this;
         }
 
-        public Builder eventURI(String eventURI) {
-            this.eventURI = eventURI;
+        /**
+         * URL of your feature management platform to send analytics events
+         *
+         * @param eventURL event url
+         * @return the builder
+         */
+        public Builder eventURL(String eventURL) {
+            this.eventURL = eventURL;
             return this;
         }
 

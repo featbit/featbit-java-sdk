@@ -48,7 +48,7 @@ public final class EvalDetail<T> implements Serializable {
      * @param reason
      * @param keyName
      * @param name
-     * @param <T> String/Boolean/Numeric Type
+     * @param <T>       String/Boolean/Numeric Type
      * @return an EvalDetail
      */
     public static <T> EvalDetail<T> of(T variation,

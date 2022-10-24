@@ -28,7 +28,7 @@ public final class FlagState<T> extends BasicFlagState implements Serializable {
      * @return a FlagState
      */
     public static <T> FlagState<T> of(EvalDetail<T> data) {
-        return new FlagState(data.isSuccess(),
+        return new FlagState<>(data.isSuccess(),
                 data.isSuccess() ? "OK" : data.getReason(),
                 data);
     }
@@ -40,19 +40,21 @@ public final class FlagState<T> extends BasicFlagState implements Serializable {
      * @param <T>     String/Boolean/Numeric Type
      * @return a FlagState
      */
-    public static <T> FlagState<T> Empty(String message) {
-        return new FlagState(false, message, null);
+    public static <T> FlagState<T> empty(String message) {
+        return new FlagState<>(false, message, null);
     }
 
     /**
      * build a flag state from json
+     *
      * @param json a string json
-     * @param cls
-     * @param <T> String/Boolean/Numeric Type
+     * @param cls  class to deserialize
+     * @param <T>  String/Boolean/Numeric Type
      * @return a FlagState
      */
-    public static <T> FlagState<T> fromJson(String json, Class<T> cls){
-        return JsonHelper.deserialize(json, new TypeToken<FlagState<T>>(){}.getType());
+    public static <T> FlagState<T> fromJson(String json, Class<T> cls) {
+        return JsonHelper.deserialize(json, new TypeToken<FlagState<T>>() {
+        }.getType());
     }
 
     /**

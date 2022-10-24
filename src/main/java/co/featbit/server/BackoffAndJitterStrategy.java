@@ -33,14 +33,14 @@ class BackoffAndJitterStrategy {
         latestGoodRun = Instant.now();
     }
 
-    private Double countJitterTime(Double delay) {
+    private double countJitterTime(Double delay) {
         return delay * jitterRatio * Math.random();
     }
 
-    private Double countBackoffTime() {
-        Double delay = new Double(firstRetryDelay.toMillis()) * Math.pow(2D, new Double(retryCount));
-        Double maxValue = new Double(maxRetryDelay.toMillis());
-        return delay <= maxValue ? delay : maxValue;
+    private double countBackoffTime() {
+        double delay = firstRetryDelay.toMillis() * Math.pow(2D, new Double(retryCount));
+        double maxValue = (double) maxRetryDelay.toMillis();
+        return Math.min(delay, maxValue);
     }
 
     Duration nextDelay(boolean forceToUseMaxRetryDelay) {
@@ -54,8 +54,8 @@ class BackoffAndJitterStrategy {
             retryCount = 0;
             duration = maxRetryDelay;
         } else {
-            Double backoffTime = countBackoffTime();
-            Long delayInMillis = Math.round(countJitterTime(backoffTime) + backoffTime / 2);
+            double backoffTime = countBackoffTime();
+            long delayInMillis = Math.round(countJitterTime(backoffTime) + backoffTime / 2);
             duration = Duration.ofMillis(delayInMillis);
         }
         retryCount++;

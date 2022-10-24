@@ -3,11 +3,9 @@ package co.featbit.server.exterior;
 import co.featbit.commons.model.AllFlagStates;
 import co.featbit.commons.model.FFCUser;
 import co.featbit.commons.model.FlagState;
-import co.featbit.commons.model.UserTag;
 import co.featbit.server.Status;
 
 import java.io.Closeable;
-import java.util.List;
 import java.util.Map;
 
 
@@ -136,7 +134,7 @@ public interface FFCClient extends Closeable {
      * Returns a list of all feature flags value with details for a given user, including the reason
      * that describes the way the value was determined, that can be used on the client side sdk or a front end .
      * <p>
-     * note that this method does not send insight events back to featureflag.co.
+     * note that this method does not send insight events back to feature flag center.
      *
      * @param user the end user requesting the flag
      * @return a {@link AllFlagStates}
@@ -183,7 +181,7 @@ public interface FFCClient extends Closeable {
      * Calculates the int value of a feature flag for a given user, and returns an object that describes the
      * way the value was determined.
      * <p>
-     * Note that If the variation has a numeric value, but not a int value, it is rounded toward zero(DOWN mode)
+     * Note that If the variation has a numeric value, but not an int value, it is rounded toward zero(DOWN mode)
      * <p>
      *
      * @param featureFlagKey the unique key for the feature flag

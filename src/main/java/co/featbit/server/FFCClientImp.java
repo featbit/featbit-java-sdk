@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A client for the featureflag.co API. The client is thread-safe.
+ * A client for the Featbit API. The client is thread-safe.
  */
 public final class FFCClientImp implements FFCClient {
 
@@ -51,13 +51,13 @@ public final class FFCClientImp implements FFCClient {
     private final Evaluator evaluator;
     private final DataSynchronizer dataSynchronizer;
     private final Status.DataUpdateStatusProvider dataUpdateStatusProvider;
-    private final Status.DataUpdator dataUpdator;
+    private final Status.DataUpdater dataUpdater;
     private final InsightProcessor insightProcessor;
 
     private final Consumer<InsightTypes.Event> eventHandler;
 
     /**
-     * Creates a new client to connect to featureflag.co with a specified configuration.
+     * Creates a new client to connect to feature flag center with a specified configuration.
      * <p>
      * This constructor can be used to configure advanced SDK features; see {@link FFCConfig.Builder}.
      * <p>
@@ -67,7 +67,7 @@ public final class FFCClientImp implements FFCClient {
      * for the lifetime of the application rather than created per request or per thread.
      * <p>
      * Note that unless client is configured in offline mode{@link FFCConfig.Builder#offline(boolean)} or set by
-     * {@link Factory#externalDataSynchronization()}, this client try to connect to featureflag.co
+     * {@link Factory#externalDataSynchronization()}, this client try to connect to feature flag center
      * as soon as the constructor is called. The constructor will return when it successfully
      * connects, or when the timeout set by {@link FFCConfig.Builder#startWaitTime(Duration)} (default:
      * 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout
@@ -80,6 +80,8 @@ public final class FFCClientImp implements FFCClient {
      * <pre><code>
      *     FFCConfig config = new FFCConfig.Builder()
      *         .startWait(Duration.ZERO)
+     *         .streamingURI("your streaming URI")
+     *         .eventURI("your event URI")
      *         .build();
      *     FFCClient client = new FFCClientImp(sdkKey, config);
      *
@@ -104,8 +106,8 @@ public final class FFCClientImp implements FFCClient {
     public FFCClientImp(String envSecret, FFCConfig config) {
         checkNotNull(config, "FFCConfig Should not be null");
         checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
-        checkArgument(Utils.isUrl(config.getStreamingURI()), "streaming uri is invalid");
-        checkArgument(Utils.isUrl(config.getEventURI()), "event uri is invalid");
+        checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
+        checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
         this.offline = config.isOffline();
         this.envSecret = envSecret;
         ContextImp context = new ContextImp(envSecret, config);
@@ -126,8 +128,8 @@ public final class FFCClientImp implements FFCClient {
         };
         this.evaluator = new EvaluatorImp(flagGetter, segmentGetter);
         //data updator
-        Status.DataUpdatorImpl dataUpdatorImpl = new Status.DataUpdatorImpl(this.storage);
-        this.dataUpdator = dataUpdatorImpl;
+        Status.DataUpdaterImpl dataUpdatorImpl = new Status.DataUpdaterImpl(this.storage);
+        this.dataUpdater = dataUpdatorImpl;
         //data processor
         this.dataSynchronizer = config.getUpdateProcessorFactory().createUpdateProcessor(context, dataUpdatorImpl);
         //data update status provider
@@ -345,9 +347,9 @@ public final class FFCClientImp implements FFCClient {
                 DataModel.Data allData = all.data();
                 Long version = allData.getTimestamp();
                 Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allDataInStorageType = allData.toStorageType();
-                boolean res = dataUpdator.init(allDataInStorageType, version);
+                boolean res = dataUpdater.init(allDataInStorageType, version);
                 if (res) {
-                    dataUpdator.updateStatus(Status.StateType.OK, null);
+                    dataUpdater.updateStatus(Status.StateType.OK, null);
                 }
                 return res;
             }

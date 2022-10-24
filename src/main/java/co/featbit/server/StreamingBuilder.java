@@ -8,7 +8,7 @@ import java.time.Duration;
  * Factory to create a {@link Streaming} implementation
  * By default, the SDK uses a streaming connection to receive feature flag data. If you want to customize the behavior of the connection,
  * create a builder with {@link Factory#dataSynchronizerFactory()}, change its properties with the methods of this class,
- * and pass it to {@link FFCConfig.Builder#updateProcessorFactory(DataSynchronizerFactory)}:
+ * and pass it to {@link FFCConfig.Builder#dataSynchronizerFactory(DataSynchronizerFactory)}:
  * <pre><code>
  *      StreamingBuilder streamingBuilder = Factory.streamingBuilder()
  *           .firstRetryDelay(Duration.ofSeconds(1));
@@ -30,7 +30,7 @@ public abstract class StreamingBuilder implements DataSynchronizerFactory {
      * to be reestablished. The delay for the first reconnection will start near this value, and then
      * increase exponentially for any subsequent connection failures.
      *
-     * @param duration the reconnect time base value; null to use the default(1s)
+     * @param duration the reconnecting time base value; null to use the default(1s)
      * @return the builder
      */
     public StreamingBuilder firstRetryDelay(Duration duration) {

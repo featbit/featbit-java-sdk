@@ -31,7 +31,7 @@ public abstract class Status {
          * The initial state of the update processing when the SDK is being initialized.
          * <p>
          * If it encounters an error that requires it to retry initialization, the state will remain at
-         * {@link #INITIALIZING} until it either succeeds and becomes {@link #OK}, or permanently fails and
+         * INITIALIZING until it either succeeds and becomes {@link #OK}, or permanently fails and
          * becomes {@link #OFF}.
          */
         INITIALIZING,
@@ -175,10 +175,10 @@ public abstract class Status {
      * The {@link DataSynchronizer} interacts with this object, rather than manipulating the {@link DataStorage} directly,
      * so that the SDK can perform any other necessary operations that should perform around data updating.
      * <p>
-     * if you overwrite the our default Update Processor,you should integrate{@link DataUpdator} to push data
+     * if you overwrite our default DataSynchronizer, you should integrate{@link DataUpdater} to push data
      * and maintain the processor status in your own code, but note that the implementation of this interface is not public
      */
-    public interface DataUpdator {
+    public interface DataUpdater {
         /**
          * Overwrites the storage with a set of items for each collection, if the new version > the old one
          * <p>
@@ -251,14 +251,13 @@ public abstract class Status {
      * <p>
      * This component is thread safe and is basic component usd in bootstrapping.
      */
-    static final class DataUpdatorImpl implements DataUpdator {
+    static final class DataUpdaterImpl implements DataUpdater {
 
         private final DataStorage storage;
         private volatile State currentState;
         private final Object lockObject = new Object();
-        // todo FlagChangeNotifier, StatusNotifier, ErrorAnalyser
 
-        public DataUpdatorImpl(DataStorage storage) {
+        public DataUpdaterImpl(DataStorage storage) {
             this.storage = storage;
             this.currentState = State.initializingState();
         }
@@ -276,20 +275,17 @@ public abstract class Status {
                 handleErrorFromStorage(ex, ErrorInfo.of(DATA_STORAGE_INIT_ERROR, ex.getMessage()));
                 return false;
             }
-            //TODO Flag Change Notifying->new thread
             return true;
         }
 
         @Override
         public boolean upsert(DataStoreTypes.Category category, String key, DataStoreTypes.Item item, Long version) {
             try {
-                storage.upsert(category, key, item, version);
+                return storage.upsert(category, key, item, version);
             } catch (Exception ex) {
                 handleErrorFromStorage(ex, ErrorInfo.of(DATA_STORAGE_UPDATE_ERROR, ex.getMessage()));
                 return false;
             }
-            //TODO Flag Change Notifying->new thread
-            return true;
         }
 
         @Override
@@ -300,7 +296,7 @@ public abstract class Status {
             synchronized (lockObject) {
                 StateType oldOne = currentState.getStateType();
                 StateType newState1 = newState;
-                // interruped state is only meaningful after initialization
+                // interrupted state is only meaningful after initialization
                 if (newState1 == StateType.INTERRUPTED && oldOne == StateType.INITIALIZING) {
                     newState1 = StateType.INITIALIZING;
                 }
@@ -373,7 +369,7 @@ public abstract class Status {
          * All of the {@link DataSynchronizer} implementations are guaranteed to update this status
          * whenever they successfully initialize, encounter an error, or recover after an error.
          * <p>
-         * For a custom implementation, it is the responsibility of the data source to report its status via {@link DataUpdator};
+         * For a custom implementation, it is the responsibility of the data source to report its status via {@link DataUpdater};
          * if it does not do so, the status will always be reported as {@link StateType#INITIALIZING}.
          *
          * @return the latest status; will never be null
@@ -418,7 +414,7 @@ public abstract class Status {
          *                (unless the thread is explicitly interrupted)
          * @return true if the connection is now in {@link StateType#OK}; false if it timed out, or if the state
          * changed to {@link StateType#OFF} and that was not the desired state
-         * @throws InterruptedException
+         * @throws InterruptedException throws an InterruptedException
          */
         boolean waitForOKState(Duration timeout) throws InterruptedException;
 
@@ -426,20 +422,20 @@ public abstract class Status {
 
     static final class DataUpdateStatusProviderImpl implements DataUpdateStatusProvider {
 
-        private final DataUpdatorImpl dataUpdator;
+        private final DataUpdaterImpl dataUpdater;
 
-        public DataUpdateStatusProviderImpl(DataUpdatorImpl dataUpdator) {
-            this.dataUpdator = dataUpdator;
+        public DataUpdateStatusProviderImpl(DataUpdaterImpl dataUpdater) {
+            this.dataUpdater = dataUpdater;
         }
 
         @Override
         public State getState() {
-            return dataUpdator.getCurrentState();
+            return dataUpdater.getCurrentState();
         }
 
         @Override
         public boolean waitFor(StateType state, Duration timeout) throws InterruptedException {
-            return dataUpdator.waitFor(state, timeout);
+            return dataUpdater.waitFor(state, timeout);
         }
 
         @Override

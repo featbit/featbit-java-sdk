@@ -27,7 +27,8 @@ public interface DataSynchronizer extends Closeable {
     Future<Boolean> start();
 
     /**
-     *  Returns true once the client has been initialized and will never return false again.
+     * Returns true once the client has been initialized and will never return false again.
+     *
      * @return true if the client has been initialized
      */
     boolean isInitialized();

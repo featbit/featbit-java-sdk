@@ -11,8 +11,8 @@ final class ContextImp implements Context {
     ContextImp(String envSecret, FFCConfig config) {
         this.basicConfig = new BasicConfig(envSecret,
                 config.isOffline(),
-                config.getStreamingURI(),
-                config.getEventURI());
+                config.getStreamingURL(),
+                config.getEventURL());
         this.httpConfig = config.getHttpConfigFactory().createHttpConfig(basicConfig);
     }
 

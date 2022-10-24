@@ -15,7 +15,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * A collection of attributes that can affect flag evaluation, usually corresponding to a user of your application.
  * The mandatory properties are the key and name. The key must uniquely identify each user in an environment;
- * this could be a username or email address for authenticated users, or a ID for anonymous users.
+ * this could be a username or email address for authenticated users, or an ID for anonymous users.
  * The name is used to search your user quickly in feature flag center.
  * The custom properties are optional, you may also define custom properties with arbitrary names and values.
  */
@@ -130,7 +130,7 @@ public final class FFCUser implements Serializable {
         /**
          * Creates a builder with the specified key
          *
-         * @param key
+         * @param key key
          */
         public Builder(String key) {
             this.key = key;
@@ -139,7 +139,7 @@ public final class FFCUser implements Serializable {
         /**
          * Changes the user's key.
          *
-         * @param s
+         * @param s key
          * @return the builder
          */
         public Builder key(String s) {
@@ -150,7 +150,7 @@ public final class FFCUser implements Serializable {
         /**
          * set the user's userName.
          *
-         * @param s
+         * @param s username
          * @return the builder
          */
         public Builder userName(String s) {
@@ -164,7 +164,7 @@ public final class FFCUser implements Serializable {
          *
          * @param key   custom attribute name
          * @param value custom attribute value
-         * @return
+         * @return the builder
          */
         public Builder custom(String key, String value) {
             if (StringUtils.isNotBlank(key) && value != null) {

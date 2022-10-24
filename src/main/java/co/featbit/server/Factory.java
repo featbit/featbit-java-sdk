@@ -2,9 +2,9 @@ package co.featbit.server;
 
 
 import co.featbit.server.exterior.DataStorageFactory;
+import co.featbit.server.exterior.DataSynchronizerFactory;
 import co.featbit.server.exterior.HttpConfigurationBuilder;
 import co.featbit.server.exterior.InsightProcessorFactory;
-import co.featbit.server.exterior.DataSynchronizerFactory;
 
 public abstract class Factory {
 
