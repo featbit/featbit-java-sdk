@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A client for the featureflag.co API. The client is thread-safe.
+ * A client for the Featbit API. The client is thread-safe.
  */
 public final class FFCClientImp implements FFCClient {
 
@@ -57,7 +57,7 @@ public final class FFCClientImp implements FFCClient {
     private final Consumer<InsightTypes.Event> eventHandler;
 
     /**
-     * Creates a new client to connect to featureflag.co with a specified configuration.
+     * Creates a new client to connect to feature flag center with a specified configuration.
      * <p>
      * This constructor can be used to configure advanced SDK features; see {@link FFCConfig.Builder}.
      * <p>
@@ -67,7 +67,7 @@ public final class FFCClientImp implements FFCClient {
      * for the lifetime of the application rather than created per request or per thread.
      * <p>
      * Note that unless client is configured in offline mode{@link FFCConfig.Builder#offline(boolean)} or set by
-     * {@link Factory#externalDataSynchronization()}, this client try to connect to featureflag.co
+     * {@link Factory#externalDataSynchronization()}, this client try to connect to feature flag center
      * as soon as the constructor is called. The constructor will return when it successfully
      * connects, or when the timeout set by {@link FFCConfig.Builder#startWaitTime(Duration)} (default:
      * 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout
@@ -80,6 +80,8 @@ public final class FFCClientImp implements FFCClient {
      * <pre><code>
      *     FFCConfig config = new FFCConfig.Builder()
      *         .startWait(Duration.ZERO)
+     *         .streamingURI("your streaming URI")
+     *         .eventURI("your event URI")
      *         .build();
      *     FFCClient client = new FFCClientImp(sdkKey, config);
      *

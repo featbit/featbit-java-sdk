@@ -11,7 +11,7 @@ import java.io.Closeable;
  * The standard implementations are:
  * <ul>
  * <li>{@link Factory#insightProcessorFactory()} (the default), which
- * sends events to featureflag.co
+ * sends events to feature flag center
  * <li>{@link Factory#externalEventTrack()} which does nothing
  * (on the assumption that another process will send the events);
  * </ul>

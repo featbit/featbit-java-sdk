@@ -89,6 +89,8 @@ public class FFCConfig {
      * Builder to create advanced configuration options, calls can be chained.
      * <pre><code>
      *  FFCConfig config = new FFCConfig.Builder()
+     *                      .streamingURI("your streaming URI")
+     *                      .eventURI("your event URI")
      *                     .startWaitTime(Duration.ZERO)
      *                     .offline(false)
      *                     .build()
@@ -126,14 +128,14 @@ public class FFCConfig {
 
         /**
          * Sets the implementation of the {@link DataSynchronizer} that receives feature flag data
-         * from featureflag.co, using a factory object. Depending on the implementation, the factory may be a builder that
+         * from feature flag center, using a factory object. Depending on the implementation, the factory may be a builder that
          * allows you to set other configuration options as well.
          * The default is{@link Factory#dataSynchronizerFactory()}
          *
          * @param dataSynchronizerFactory an {@link DataSynchronizerFactory} instance
          * @return the builder
          */
-        public Builder updateProcessorFactory(DataSynchronizerFactory dataSynchronizerFactory) {
+        public Builder dataSynchronizerFactory(DataSynchronizerFactory dataSynchronizerFactory) {
             this.dataSynchronizerFactory = dataSynchronizerFactory;
             return this;
         }
@@ -167,7 +169,7 @@ public class FFCConfig {
         /**
          * Set whether SDK is offline.
          *
-         * @param offline when set to true no connection to featureflag.co any more
+         * @param offline when set to true no connection to feature flag center
          * @return the builder
          */
         public Builder offline(boolean offline) {
@@ -187,11 +189,23 @@ public class FFCConfig {
             return this;
         }
 
+        /**
+         * URI of your feature management platform to synchronise feature flags, user segments, etc.
+         *
+         * @param streamingURI
+         * @return the builder
+         */
         public Builder streamingURI(String streamingURI) {
             this.streamingURI = streamingURI;
             return this;
         }
 
+        /**
+         * URI of your feature management platform to send analytics events
+         *
+         * @param eventURI
+         * @return the builder
+         */
         public Builder eventURI(String eventURI) {
             this.eventURI = eventURI;
             return this;

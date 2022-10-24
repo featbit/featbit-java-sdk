@@ -160,7 +160,7 @@ abstract class Insights {
 
         public Boolean run() {
             try {
-                // split the payload into small partitions and send them to featureflag.co
+                // split the payload into small partitions and send them to feature flag center
                 Iterables.partition(Arrays.asList(payload), MAX_EVENT_SIZE_PER_REQUEST)
                         .forEach(partition -> {
                             String json = JsonHelper.serialize(partition);

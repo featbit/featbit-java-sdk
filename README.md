@@ -2,8 +2,7 @@
 
 ## Introduction
 
-This is the Java Server Side SDK for the feature management platform [featureflag.co](https://featureflag.co/). It is
-intended for use in a multi-user Java server applications.
+This is the Java Server Side SDK for the feature management platform Featbit. It is intended for use in a multi-user Java server applications.
 
 This SDK has two main purposes:
 
@@ -16,17 +15,18 @@ We use websocket to make the local data synchronized with the server, and then s
 
 ## Offline mode support
 
-In the offline mode, SDK DOES not exchange any data with [featureflag.co](https://featureflag.co/)
+In the offline mode, SDK DOES not exchange any data with your feature management platform
 
-In the following situation, the SDK would work when there is no internet connection: it has been initialized in using `co.featureflags.server.exterior.FFCClient#initializeFromExternalJson(json)`
+In the following situation, the SDK would work when there is no internet connection: it has been initialized in using `co.featbit.server.exterior.FFCClient#initializeFromExternalJson(json)`
 
 To open the offline mode:
 
 ```java
 FFCConfig config = new FFCConfig.Builder()
-               .offline(false)
-               .build()
-FFCClient client = new FFCClientImp(envSecret, config);
+               .offline(true)
+               .streamingURI("your streaming URI")
+               .eventURI("your event URI")
+               .build();
 ```
 
 ## Evaluation of a feature flag
@@ -61,7 +61,7 @@ retained for the lifetime of the application rather than created per request or 
 ### Bootstrapping
 
 The bootstrapping is in fact the call of constructor of `FFCClientImp`, in which the SDK will be initialized, using
-streaming from [featureflag.co](https://featureflag.co/).
+streaming from your feature management platform.
 
 The constructor will return when it successfully connects, or when the timeout set
 by `FFCConfig.Builder#startWaitTime(Duration)`
@@ -71,6 +71,11 @@ continue trying to connect in the background unless there has been an `java.net.
 client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`.
 
 ```java
+FFCConfig config = new FFCConfig.Builder()
+        .streamingURI("your streaming URI")
+        .eventURI("your event URI")
+        .build();
+
 FFCClient client = new FFCClientImp(sdkKey, config);
 if(client.isInitialized()){
 // do whatever is appropriate
@@ -83,6 +88,8 @@ point, you can use `getDataUpdateStatusProvider()`, which provides an asynchrono
 ```java
 FFCConfig config = new FFCConfig.Builder()
                .startWait(Duration.ZERO)
+               .streamingURI("your streaming URI")
+               .eventURI("your event URI")
                .build();
 FFCClient client = new FFCClientImp(sdkKey, config);
     
@@ -97,30 +104,23 @@ Note that the _**sdkKey(envSecret)**_ is mandatory.
 
 ### FFCConfig and Components
 
-`FFCConfig` exposes advanced configuration options for the `FFCClient`.
+`streamingURI`: URI of your feature management platform to synchronise feature flags, user segments, etc.
+
+`eventURI`: URI of your feature management platform to send analytics events
+
+`streamingURI` and `eventURI` are required.
 
 `startWaitTime`: how long the constructor will block awaiting a successful data sync. Setting this to a zero or negative
 duration will not block and cause the constructor to return immediately.
 
-`offline`: Set whether SDK is offline. when set to true no connection to feature-flag.co anymore
-
-We strongly recommend to use the default configuration or just set `startWaitTime` or `offline` if necessary.
-
-
+`offline`: Set whether SDK is offline. when set to true no connection to your feature management platform anymore
 
 ```java
-// default configuration
-FFCConfig config = FFCConfig.DEFAULT
-
-// set startWaitTime and offline
 FFCConfig config = new FFCConfig.Builder()
-               .startWaitTime(Duration.ZERO)
-               .offline(false)
-               .build()
+                .streamingURI("your streaming URI")
+                .eventURI("your event URI")
+                .build()
 FFCClient client = new FFCClientImp(sdkKey, config);
-
-// default configuration
-FFCClient client = new FFCClientImp(sdkKey);
 ```
 
 `FFCConfig` provides advanced configuration options for setting the SDK component or you want to customize the behavior
@@ -151,8 +151,8 @@ FFCConfig config = new FFCConfig.Builder()
         .build();
 ```
 
-`UpdateProcessorFactory` SDK sets the implementation of the `UpdateProcessor` that receives feature flag data from feature-flag.co, 
-using a factory object. The default is `Factory#streamingBuilder()`, which will create a streaming, using websocket.
+`DataSynchronizerFactory` SDK sets the implementation of the `DataSynchronizer` that receives feature flag data from  your feature management platform, 
+using a factory object. The default is `Factory#dataSynchronizerFactory()`, which will create a streaming, using websocket.
 If Developers would like to know what the implementation is, they can read the javadoc and source code.
 
 `InsightProcessorFactory` SDK sets the implementation of `InsightProcessor` to be used for processing analytics events, 
@@ -165,9 +165,9 @@ SDK calculates the value of a feature flag for a given user, and returns a flag 
 that the value was determined.
 
 `FFUser`: A collection of attributes that can affect flag evaluation, usually corresponding to a user of your application.
-This object contains built-in properties(`key`, `userName`, `email` and `country`). The `key` and `userName` are required.
+This object contains built-in properties(`key`, `userName`). The `key` and `userName` are required.
 The `key` must uniquely identify each user; this could be a username or email address for authenticated users, or a ID for anonymous users.
-The `userName` is used to search your user quickly. All other built-in properties are optional, you may also define custom properties with arbitrary names and values.
+The `userName` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
 
 ```java
 FFCClient client = new FFCClientImp(envSecret);
@@ -175,8 +175,6 @@ FFCClient client = new FFCClientImp(envSecret);
 // FFUser creation
 FFCUser user = new FFCUser.Builder("key")
     .userName("name")
-    .country("country")
-    .email("email@xxx.com")
     .custom("property", "value")
     .build()
 
