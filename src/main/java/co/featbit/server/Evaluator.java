@@ -1,6 +1,6 @@
 package co.featbit.server;
 
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import co.featbit.server.exterior.DataStoreTypes;
 import org.slf4j.Logger;
 
@@ -63,7 +63,7 @@ abstract class Evaluator {
         this.segmentGetter = segmentGetter;
     }
 
-    abstract EvalResult evaluate(DataModel.FeatureFlag flag, FFCUser user, InsightTypes.Event event);
+    abstract EvalResult evaluate(DataModel.FeatureFlag flag, FBUser user, InsightTypes.Event event);
 
     @FunctionalInterface
     interface Getter<T extends DataStoreTypes.Item> {

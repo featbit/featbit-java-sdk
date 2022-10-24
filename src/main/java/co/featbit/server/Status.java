@@ -386,10 +386,10 @@ public abstract class Status {
          * A scenario in which this might be useful is if you want to use SDK without waiting
          * for it to initialize, and then wait for initialization at a later time or on a different point:
          * <pre><code>
-         *     FFCConfig config = new FFCConfig.Builder()
+         *     FBConfig config = new FBConfig.Builder()
          *         .startWait(Duration.ZERO)
          *         .build();
-         *     FFCClient client = new FFCClient(sdkKey, config);
+         *     FBClient client = new FBClient(sdkKey, config);
          *
          *     // later, when you want to wait for initialization to finish:
          *     boolean inited = client.getDataUpdateStatusProvider().waitFor(StateType.OK, Duration.ofSeconds(15))

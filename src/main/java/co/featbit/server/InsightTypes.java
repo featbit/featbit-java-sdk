@@ -1,6 +1,6 @@
 package co.featbit.server;
 
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -18,13 +18,13 @@ import java.util.concurrent.Semaphore;
 public abstract class InsightTypes {
 
     public static abstract class Event {
-        protected final FFCUser user;
+        protected final FBUser user;
 
-        Event(FFCUser user) {
+        Event(FBUser user) {
             this.user = user;
         }
 
-        public FFCUser getUser() {
+        public FBUser getUser() {
             return user;
         }
 
@@ -55,11 +55,11 @@ public abstract class InsightTypes {
     final static class FlagEvent extends Event {
         private final List<FlagEventVariation> userVariations = new ArrayList<>();
 
-        private FlagEvent(FFCUser user) {
+        private FlagEvent(FBUser user) {
             super(user);
         }
 
-        static FlagEvent of(FFCUser user) {
+        static FlagEvent of(FBUser user) {
             return new FlagEvent(user);
         }
 
@@ -82,11 +82,11 @@ public abstract class InsightTypes {
     final static class MetricEvent extends Event {
         private final List<Metric> metrics = new ArrayList<>();
 
-        MetricEvent(FFCUser user) {
+        MetricEvent(FBUser user) {
             super(user);
         }
 
-        static MetricEvent of(FFCUser user) {
+        static MetricEvent of(FBUser user) {
             return new MetricEvent(user);
         }
 
@@ -174,7 +174,7 @@ public abstract class InsightTypes {
 
         @Override
         public JsonElement serialize(FlagEvent flagEvent, Type type, JsonSerializationContext jsonSerializationContext) {
-            FFCUser user = flagEvent.getUser();
+            FBUser user = flagEvent.getUser();
             JsonObject json = serializeUser(user);
             JsonArray array1 = new JsonArray();
             for (FlagEventVariation variation : flagEvent.userVariations) {
@@ -197,7 +197,7 @@ public abstract class InsightTypes {
     final static class MetricEventSerializer implements JsonSerializer<MetricEvent> {
         @Override
         public JsonElement serialize(MetricEvent metricEvent, Type type, JsonSerializationContext jsonSerializationContext) {
-            FFCUser user = metricEvent.getUser();
+            FBUser user = metricEvent.getUser();
             JsonObject json = serializeUser(user);
             JsonArray array1 = new JsonArray();
             for (Metric metric : metricEvent.metrics) {
@@ -214,7 +214,7 @@ public abstract class InsightTypes {
         }
     }
 
-    private static JsonObject serializeUser(FFCUser user) {
+    private static JsonObject serializeUser(FBUser user) {
         JsonObject json = new JsonObject();
         JsonObject json1 = new JsonObject();
         json1.addProperty("userName", user.getUserName());

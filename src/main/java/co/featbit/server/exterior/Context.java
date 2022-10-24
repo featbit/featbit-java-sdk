@@ -1,8 +1,11 @@
 package co.featbit.server.exterior;
 
+import co.featbit.server.FBClientImp;
+import co.featbit.server.FBConfig;
+
 /**
- * Context is used to create components, context information provided by the {@link co.featbit.server.FFCClientImp}
- * This is passed as parameter to component factories. Component factories do not receive the entire {@link co.featbit.server.FFCConfig}
+ * Context is used to create components, context information provided by the {@link FBClientImp}
+ * This is passed as parameter to component factories. Component factories do not receive the entire {@link FBConfig}
  * because it contains only factory implementations.
  * <p>
  * Note that the actual implementation class may contain other properties that are only relevant to the built-in

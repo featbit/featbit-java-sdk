@@ -4,12 +4,12 @@ import co.featbit.commons.json.JsonHelper;
 import co.featbit.commons.json.JsonParseException;
 import co.featbit.commons.model.AllFlagStates;
 import co.featbit.commons.model.EvalDetail;
-import co.featbit.commons.model.FFCUser;
+import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.FlagState;
 import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStoreTypes;
 import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.FFCClient;
+import co.featbit.server.exterior.FBClient;
 import co.featbit.server.exterior.InsightProcessor;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.codec.binary.Base64;
@@ -41,11 +41,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A client for the Featbit API. The client is thread-safe.
  */
-public final class FFCClientImp implements FFCClient {
+public final class FBClientImp implements FBClient {
 
     private final static Logger logger = Loggers.CLIENT;
-
-    private final String envSecret;
     private final boolean offline;
     private final DataStorage storage;
     private final Evaluator evaluator;
@@ -59,17 +57,17 @@ public final class FFCClientImp implements FFCClient {
     /**
      * Creates a new client to connect to feature flag center with a specified configuration.
      * <p>
-     * This constructor can be used to configure advanced SDK features; see {@link FFCConfig.Builder}.
+     * This constructor can be used to configure advanced SDK features; see {@link FBConfig.Builder}.
      * <p>
      * Applications SHOULD instantiate a single instance for the lifetime of the application. In
      * the case where an application needs to evaluate feature flags from different environments,
      * you may create multiple clients, but they should still be retained
      * for the lifetime of the application rather than created per request or per thread.
      * <p>
-     * Note that unless client is configured in offline mode{@link FFCConfig.Builder#offline(boolean)} or set by
+     * Note that unless client is configured in offline mode{@link FBConfig.Builder#offline(boolean)} or set by
      * {@link Factory#externalDataSynchronization()}, this client try to connect to feature flag center
      * as soon as the constructor is called. The constructor will return when it successfully
-     * connects, or when the timeout set by {@link FFCConfig.Builder#startWaitTime(Duration)} (default:
+     * connects, or when the timeout set by {@link FBConfig.Builder#startWaitTime(Duration)} (default:
      * 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout
      * elapses, you will receive the client in an uninitialized state where feature flags will return
      * default values; it will still continue trying to connect in the background unless there has been an {@link java.net.ProtocolException}
@@ -78,12 +76,12 @@ public final class FFCClientImp implements FFCClient {
      * If you prefer to have the constructor return immediately, and then wait for initialization to finish
      * at some other point, you can use {@link #getDataUpdateStatusProvider()} as follows:
      * <pre><code>
-     *     FFCConfig config = new FFCConfig.Builder()
+     *     FBConfig config = new FBConfig.Builder()
      *         .startWait(Duration.ZERO)
      *         .streamingURI("your streaming URI")
      *         .eventURI("your event URI")
      *         .build();
-     *     FFCClient client = new FFCClientImp(sdkKey, config);
+     *     FBClient client = new FBClientImp(sdkKey, config);
      *
      *     // later, when you want to wait for initialization to finish:
      *     boolean inited = client.getDataUpdateStatusProvider().waitForOKState(Duration.ofSeconds(15))
@@ -99,17 +97,16 @@ public final class FFCClientImp implements FFCClient {
      * any exception that could only be detected after making a request to our API
      *
      * @param envSecret the secret key for your own environment
-     * @param config    a client configuration object {@link FFCConfig}
+     * @param config    a client configuration object {@link FBConfig}
      * @throws NullPointerException     if a non-nullable parameter was null
      * @throws IllegalArgumentException if envSecret is invalid
      */
-    public FFCClientImp(String envSecret, FFCConfig config) {
-        checkNotNull(config, "FFCConfig Should not be null");
+    public FBClientImp(String envSecret, FBConfig config) {
+        checkNotNull(config, "FBConfig Should not be null");
         checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
         checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
         checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
         this.offline = config.isOffline();
-        this.envSecret = envSecret;
         ContextImp context = new ContextImp(envSecret, config);
         //init components
         //Insight processor
@@ -168,37 +165,37 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public String variation(String featureFlagKey, FFCUser user, String defaultValue) {
+    public String variation(String featureFlagKey, FBUser user, String defaultValue) {
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, null);
         return res.getValue();
     }
 
     @Override
-    public FlagState<String> variationDetail(String featureFlagKey, FFCUser user, String defaultValue) {
+    public FlagState<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue) {
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, null);
         return EvalDetail.of(res.getValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
     @Override
-    public boolean boolVariation(String featureFlagKey, FFCUser user, Boolean defaultValue) {
+    public boolean boolVariation(String featureFlagKey, FBUser user, Boolean defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
         return BooleanUtils.toBoolean(res.getValue());
     }
 
     @Override
-    public boolean isEnabled(String featureFlagKey, FFCUser user) {
+    public boolean isEnabled(String featureFlagKey, FBUser user) {
         return boolVariation(featureFlagKey, user, false);
     }
 
     @Override
-    public FlagState<Boolean> boolVariationDetail(String featureFlagKey, FFCUser user, Boolean defaultValue) {
+    public FlagState<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
         return EvalDetail.of(BooleanUtils.toBoolean(res.getValue()), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
-    public double doubleVariation(String featureFlagKey, FFCUser user, Double defaultValue) {
+    public double doubleVariation(String featureFlagKey, FBUser user, Double defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
         return Double.parseDouble(res.getValue());
@@ -206,40 +203,40 @@ public final class FFCClientImp implements FFCClient {
 
 
     @Override
-    public FlagState<Double> doubleVariationDetail(String featureFlagKey, FFCUser user, Double defaultValue) {
+    public FlagState<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
         return EvalDetail.of(Double.parseDouble(res.getValue()), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
-    public int intVariation(String featureFlagKey, FFCUser user, Integer defaultValue) {
+    public int intVariation(String featureFlagKey, FBUser user, Integer defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
         return Double.valueOf(res.getValue()).intValue();
     }
 
     @Override
-    public FlagState<Integer> intVariationDetail(String featureFlagKey, FFCUser user, Integer defaultValue) {
+    public FlagState<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
         return EvalDetail.of(Double.valueOf(res.getValue()).intValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
-    public long longVariation(String featureFlagKey, FFCUser user, Long defaultValue) {
+    public long longVariation(String featureFlagKey, FBUser user, Long defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
         return Double.valueOf(res.getValue()).longValue();
     }
 
     @Override
-    public FlagState<Long> longVariationDetail(String featureFlagKey, FFCUser user, Long defaultValue) {
+    public FlagState<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
         return EvalDetail.of(Double.valueOf(res.getValue()).longValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
     @Override
-    public <T> T jsonVariation(String featureFlagKey, FFCUser user, Class<T> clazz, T defaultValue) {
+    public <T> T jsonVariation(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
         String json = variation(featureFlagKey, user, DEFAULT_JSON_VALUE);
         if (DEFAULT_JSON_VALUE.equals(json)) return defaultValue;
         try {
@@ -252,7 +249,7 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FFCUser user, Class<T> clazz, T defaultValue) {
+    public <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
         T value;
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, DEFAULT_JSON_VALUE, null);
         if (DEFAULT_JSON_VALUE.equals(res.getValue())) {
@@ -268,7 +265,7 @@ public final class FFCClientImp implements FFCClient {
         return EvalDetail.of(value, res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
     }
 
-    private Evaluator.EvalResult evaluateInternal(String featureFlagKey, FFCUser user, Object defaultValue, Class requiredType) {
+    private Evaluator.EvalResult evaluateInternal(String featureFlagKey, FBUser user, Object defaultValue, Class<?> requiredType) {
         try {
             if (!isInitialized()) {
                 Loggers.EVALUATION.warn("FFC JAVA SDK: evaluation is called before Java SDK client is initialized for feature flag, well using the default value");
@@ -358,7 +355,7 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public AllFlagStates<String> getAllLatestFlagsVariations(FFCUser user) {
+    public AllFlagStates<String> getAllLatestFlagsVariations(FBUser user) {
         ImmutableMap.Builder<EvalDetail<String>, InsightTypes.Event> builder = ImmutableMap.builder();
         boolean success = true;
         String errorString = null;
@@ -402,12 +399,12 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public void trackMetric(FFCUser user, String eventName) {
+    public void trackMetric(FBUser user, String eventName) {
         trackMetric(user, eventName, 1.0);
     }
 
     @Override
-    public void trackMetric(FFCUser user, String eventName, double metricValue) {
+    public void trackMetric(FBUser user, String eventName, double metricValue) {
         if (user == null || StringUtils.isBlank(eventName) || metricValue <= 0) {
             Loggers.CLIENT.warn("FFC JAVA SDK: event/user/metric invalid");
             return;
@@ -417,7 +414,7 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public void trackMetrics(FFCUser user, String... eventNames) {
+    public void trackMetrics(FBUser user, String... eventNames) {
         if (user == null || eventNames == null || eventNames.length == 0) {
             Loggers.CLIENT.warn("FFC JAVA SDK: user/events invalid");
             return;
@@ -432,7 +429,7 @@ public final class FFCClientImp implements FFCClient {
     }
 
     @Override
-    public void trackMetrics(FFCUser user, Map<String, Double> metrics) {
+    public void trackMetrics(FBUser user, Map<String, Double> metrics) {
         if (user == null || metrics == null || metrics.isEmpty()) {
             Loggers.CLIENT.warn("FFC JAVA SDK: user/metrics invalid");
             return;

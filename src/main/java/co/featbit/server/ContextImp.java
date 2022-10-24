@@ -8,7 +8,7 @@ final class ContextImp implements Context {
     private final HttpConfig httpConfig;
     private final BasicConfig basicConfig;
 
-    ContextImp(String envSecret, FFCConfig config) {
+    ContextImp(String envSecret, FBConfig config) {
         this.basicConfig = new BasicConfig(envSecret,
                 config.isOffline(),
                 config.getStreamingURL(),
