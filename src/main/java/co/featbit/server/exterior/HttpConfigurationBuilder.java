@@ -1,8 +1,8 @@
 package co.featbit.server.exterior;
 
-import co.featbit.server.Utils;
 import co.featbit.server.FFCConfig;
 import co.featbit.server.Factory;
+import co.featbit.server.Utils;
 import okhttp3.Authenticator;
 
 import javax.net.SocketFactory;

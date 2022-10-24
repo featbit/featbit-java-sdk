@@ -1,7 +1,7 @@
 package co.featbit.server.exterior;
 
-import co.featbit.server.InsightTypes;
 import co.featbit.server.Factory;
+import co.featbit.server.InsightTypes;
 
 import java.io.Closeable;
 
@@ -15,7 +15,6 @@ import java.io.Closeable;
  * <li>{@link Factory#externalEventTrack()} which does nothing
  * (on the assumption that another process will send the events);
  * </ul>
- *
  */
 public interface InsightProcessor extends Closeable {
 

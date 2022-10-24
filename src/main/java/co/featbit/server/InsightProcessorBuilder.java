@@ -1,8 +1,8 @@
 package co.featbit.server;
 
 import co.featbit.server.exterior.InsightEventSenderFactory;
-import co.featbit.server.exterior.InsightProcessorFactory;
 import co.featbit.server.exterior.InsightProcessor;
+import co.featbit.server.exterior.InsightProcessorFactory;
 
 import java.time.Duration;
 

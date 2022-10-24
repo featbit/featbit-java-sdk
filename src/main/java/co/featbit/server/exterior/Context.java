@@ -12,12 +12,14 @@ package co.featbit.server.exterior;
 public interface Context {
     /**
      * the basic config, ex envSecret, offline, of SDK
+     *
      * @return basic configuration
      */
     BasicConfig basicConfig();
 
     /**
      * The networking properties that apply to all components.
+     *
      * @return http configuration
      */
     HttpConfig http();

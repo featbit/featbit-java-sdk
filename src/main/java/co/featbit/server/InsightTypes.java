@@ -1,14 +1,12 @@
 package co.featbit.server;
 
 import co.featbit.commons.model.FFCUser;
-import co.featbit.server.exterior.DefaultSender;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.JsonAdapter;
-import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Type;
 import java.time.Instant;

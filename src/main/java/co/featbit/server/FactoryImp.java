@@ -5,13 +5,13 @@ import co.featbit.server.exterior.Context;
 import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageFactory;
 import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataSynchronizer;
+import co.featbit.server.exterior.DataSynchronizerFactory;
 import co.featbit.server.exterior.DefaultSender;
 import co.featbit.server.exterior.HttpConfig;
 import co.featbit.server.exterior.HttpConfigurationBuilder;
 import co.featbit.server.exterior.InsightProcessor;
 import co.featbit.server.exterior.InsightProcessorFactory;
-import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.DataSynchronizerFactory;
 import com.google.common.collect.ImmutableMap;
 
 import java.time.Duration;

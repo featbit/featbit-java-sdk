@@ -2,7 +2,6 @@ package co.featbit.server.exterior;
 
 /**
  * Interface for a factory that creates some implementation of {@link DataStorage}.
- *
  */
 public interface DataStorageFactory {
 

@@ -2,8 +2,6 @@ package co.featbit.server;
 
 import co.featbit.commons.model.FFCUser;
 import co.featbit.server.exterior.DataStoreTypes;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 /**

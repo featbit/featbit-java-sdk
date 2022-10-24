@@ -2,7 +2,6 @@ package co.featbit.server.exterior;
 
 /**
  * Interface for a factory that creates an implementation of {@link InsightProcessor}.
- *
  */
 
 public interface InsightProcessorFactory {

@@ -46,13 +46,15 @@ public final class FlagState<T> extends BasicFlagState implements Serializable {
 
     /**
      * build a flag state from json
+     *
      * @param json a string json
      * @param cls
-     * @param <T> String/Boolean/Numeric Type
+     * @param <T>  String/Boolean/Numeric Type
      * @return a FlagState
      */
-    public static <T> FlagState<T> fromJson(String json, Class<T> cls){
-        return JsonHelper.deserialize(json, new TypeToken<FlagState<T>>(){}.getType());
+    public static <T> FlagState<T> fromJson(String json, Class<T> cls) {
+        return JsonHelper.deserialize(json, new TypeToken<FlagState<T>>() {
+        }.getType());
     }
 
     /**
