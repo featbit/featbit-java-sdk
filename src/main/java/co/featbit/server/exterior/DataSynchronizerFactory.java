@@ -16,5 +16,5 @@ public interface DataSynchronizerFactory {
      * @param dataUpdater the {@link Status.DataUpdater} which pushes data into the {@link DataStorage}
      * @return an {@link DataSynchronizer}
      */
-    DataSynchronizer createUpdateProcessor(Context context, Status.DataUpdater dataUpdater);
+    DataSynchronizer createDataSynchronizer(Context context, Status.DataUpdater dataUpdater);
 }

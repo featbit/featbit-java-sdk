@@ -17,7 +17,9 @@ import java.lang.reflect.Type;
  * this class is only for internal use
  */
 public abstract class JsonHelper {
+    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final Gson gson = new GsonBuilder()
+            .setDateFormat(DATE_FORMAT)
             .setPrettyPrinting()
             .serializeNulls()
             .disableHtmlEscaping()

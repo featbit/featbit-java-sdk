@@ -103,10 +103,12 @@ public final class FBClientImp implements FBClient {
      */
     public FBClientImp(String envSecret, FBConfig config) {
         checkNotNull(config, "FBConfig Should not be null");
-        checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
-        checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
-        checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
         this.offline = config.isOffline();
+        if (!this.offline) {
+            checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
+            checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
+            checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
+        }
         ContextImp context = new ContextImp(envSecret, config);
         //init components
         //Insight processor
@@ -128,7 +130,7 @@ public final class FBClientImp implements FBClient {
         Status.DataUpdaterImpl dataUpdatorImpl = new Status.DataUpdaterImpl(this.storage);
         this.dataUpdater = dataUpdatorImpl;
         //data processor
-        this.dataSynchronizer = config.getUpdateProcessorFactory().createUpdateProcessor(context, dataUpdatorImpl);
+        this.dataSynchronizer = config.getDataSynchronizerFactory().createDataSynchronizer(context, dataUpdatorImpl);
         //data update status provider
         this.dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdatorImpl);
 
@@ -137,7 +139,7 @@ public final class FBClientImp implements FBClient {
         Future<Boolean> initFuture = this.dataSynchronizer.start();
         if (!startWait.isZero() && !startWait.isNegative()) {
             try {
-                if (!(config.getUpdateProcessorFactory() instanceof FactoryImp.NullDataSynchronizerFactory)) {
+                if (!(config.getDataSynchronizerFactory() instanceof FactoryImp.NullDataSynchronizerFactory)) {
                     logger.info("FFC JAVA SDK: waiting for Client initialization in {} milliseconds", startWait.toMillis());
                 }
                 if (config.getDataStorageFactory() instanceof FactoryImp.NullDataStorageFactory) {
