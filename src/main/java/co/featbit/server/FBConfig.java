@@ -36,7 +36,7 @@ public class FBConfig {
         return dataStorageFactory;
     }
 
-    public DataSynchronizerFactory getUpdateProcessorFactory() {
+    public DataSynchronizerFactory getDataSynchronizerFactory() {
         return dataSynchronizerFactory;
     }
 

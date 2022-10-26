@@ -38,7 +38,7 @@ abstract class FactoryImp {
 
     static final class StreamingBuilderImpl extends StreamingBuilder {
         @Override
-        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdater dataUpdater) {
+        public DataSynchronizer createDataSynchronizer(Context config, Status.DataUpdater dataUpdater) {
             Loggers.UPDATE_PROCESSOR.debug("Choose Streaming Update Processor");
             firstRetryDelay = firstRetryDelay == null ? DEFAULT_FIRST_RETRY_DURATION : firstRetryDelay;
             return new Streaming(dataUpdater, config, firstRetryDelay, maxRetryTimes);
@@ -109,7 +109,7 @@ abstract class FactoryImp {
         static final NullDataSynchronizerFactory SINGLETON = new NullDataSynchronizerFactory();
 
         @Override
-        public DataSynchronizer createUpdateProcessor(Context config, Status.DataUpdater dataUpdater) {
+        public DataSynchronizer createDataSynchronizer(Context config, Status.DataUpdater dataUpdater) {
             if (config.basicConfig().isOffline()) {
                 Loggers.CLIENT.debug("SDK is in offline mode");
             } else {

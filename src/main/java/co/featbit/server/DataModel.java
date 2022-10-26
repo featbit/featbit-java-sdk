@@ -3,9 +3,12 @@ package co.featbit.server;
 import co.featbit.commons.json.JsonHelper;
 import co.featbit.server.exterior.DataStoreTypes;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.JsonAdapter;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -152,24 +155,22 @@ public abstract class DataModel {
         }
     }
 
-    static class Segment implements DataStoreTypes.Item {
-
+    @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
+    static class Segment implements DataStoreTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         private final String id;
-
         private final Boolean isArchived;
-
-        private final Long timestamp;
-
+        @Expose(serialize = false)
+        final Date updatedAt;
+        @Expose(deserialize = false)
+        private Long timestamp;
         private final List<String> included;
-
         private final List<String> excluded;
-
         private final List<TargetRule> rules;
 
-        Segment(String id, Boolean isArchived, Long timestamp, List<String> included, List<String> excluded, List<TargetRule> rules) {
+        Segment(String id, Boolean isArchived, Date updatedAt, List<String> included, List<String> excluded, List<TargetRule> rules) {
             this.id = id;
             this.isArchived = isArchived;
-            this.timestamp = timestamp;
+            this.updatedAt = updatedAt;
             this.included = included;
             this.excluded = excluded;
             this.rules = rules;
@@ -222,12 +223,20 @@ public abstract class DataModel {
         public DataStoreTypes.Item toArchivedItem() {
             return new ArchivedItem(this.id, this.timestamp);
         }
+
+        @Override
+        public void afterDeserialization() {
+            this.timestamp = updatedAt.getTime();
+        }
     }
 
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
     static class FeatureFlag implements DataStoreTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         final String id;
-        private final Long timestamp;
+        @Expose(serialize = false)
+        final Date updatedAt;
+        @Expose(deserialize = false)
+        private Long timestamp;
         private final boolean isArchived;
         private final boolean exptIncludeAllTargets;
         private final boolean isEnabled;
@@ -239,11 +248,12 @@ public abstract class DataModel {
         private final List<TargetRule> rules;
         private final Fallthrough fallthrough;
         private final String disabledVariationId;
-        private transient Map<String, Variation> variationMap;
+        @Expose(serialize = false, deserialize = false)
+        private Map<String, Variation> variationMap;
 
-        FeatureFlag(String id, Long timestamp, boolean isArchived, boolean exptIncludeAllTargets, boolean isEnabled, String name, String key, String variationType, List<Variation> variations, List<TargetUser> targetUsers, List<TargetRule> rules, Fallthrough fallthrough, String disabledVariationId) {
+        FeatureFlag(String id, Date updatedAt, boolean isArchived, boolean exptIncludeAllTargets, boolean isEnabled, String name, String key, String variationType, List<Variation> variations, List<TargetUser> targetUsers, List<TargetRule> rules, Fallthrough fallthrough, String disabledVariationId) {
             this.id = id;
-            this.timestamp = timestamp;
+            this.updatedAt = updatedAt;
             this.isArchived = isArchived;
             this.exptIncludeAllTargets = exptIncludeAllTargets;
             this.isEnabled = isEnabled;
@@ -327,6 +337,7 @@ public abstract class DataModel {
 
         @Override
         public void afterDeserialization() {
+            this.timestamp = updatedAt.getTime();
             if (!isArchived) {
                 ImmutableMap.Builder<String, Variation> builder = ImmutableMap.builder();
                 for (Variation variation : getVariations()) {
