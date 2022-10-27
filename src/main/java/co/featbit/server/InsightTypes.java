@@ -179,17 +179,17 @@ public abstract class InsightTypes {
             JsonArray array1 = new JsonArray();
             for (FlagEventVariation variation : flagEvent.userVariations) {
                 JsonObject var = new JsonObject();
-                var.addProperty("featureFlagKeyName", variation.getFeatureFlagKeyName());
+                var.addProperty("featureFlagKey", variation.getFeatureFlagKeyName());
                 var.addProperty("sendToExperiment", variation.getVariation().isSendToExperiment());
                 var.addProperty("timestamp", Instant.now().toEpochMilli());
                 JsonObject v = new JsonObject();
-                v.addProperty("localId", variation.getVariation().getIndex());
-                v.addProperty("variationValue", variation.getVariation().getValue());
+                v.addProperty("id", variation.getVariation().getIndex());
+                v.addProperty("value", variation.getVariation().getValue());
                 v.addProperty("reason", variation.getVariation().getReason());
                 var.add("variation", v);
                 array1.add(var);
             }
-            json.add("userVariations", array1);
+            json.add("variations", array1);
             return json;
         }
     }
@@ -217,7 +217,7 @@ public abstract class InsightTypes {
     private static JsonObject serializeUser(FBUser user) {
         JsonObject json = new JsonObject();
         JsonObject json1 = new JsonObject();
-        json1.addProperty("userName", user.getUserName());
+        json1.addProperty("name", user.getUserName());
         json1.addProperty("keyId", user.getKey());
         JsonArray array = new JsonArray();
         for (Map.Entry<String, String> keyItem : user.getCustom().entrySet()) {
