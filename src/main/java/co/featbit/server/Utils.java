@@ -35,7 +35,7 @@ import static co.featbit.server.Evaluator.FLAG_STRING_TYPE;
 public abstract class Utils {
 
     public static Iterable<Map.Entry<String, String>> defaultHeaders(String envSecret) {
-        return ImmutableMap.of("envSecret", envSecret,
+        return ImmutableMap.of("Authorization", envSecret,
                         "User-Agent", "fb-java-server-sdk",
                         "Content-Type", "application/json")
                 .entrySet();

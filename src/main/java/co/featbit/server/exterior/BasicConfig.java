@@ -9,7 +9,7 @@ public final class BasicConfig {
 
     private static final String DEFAULT_STREAMING_PATH = "/streaming";
 
-    private static final String DEFAULT_EVENT_PATH = "/api/public/track";
+    private static final String DEFAULT_EVENT_PATH = "/api/public/insight/track";
 
     private final String envSecret;
     private final boolean offline;
