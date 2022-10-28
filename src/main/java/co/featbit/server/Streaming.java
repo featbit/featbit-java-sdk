@@ -215,7 +215,7 @@ final class Streaming implements DataSynchronizer {
         return opOK;
     }
 
-    private final class DefaultWebSocketListener extends StreamingWebSocketListener {
+    final class DefaultWebSocketListener extends StreamingWebSocketListener {
         // this callback method may throw a JsonParseException
         // if received data is invalid
         @Override
@@ -293,8 +293,9 @@ final class Streaming implements DataSynchronizer {
             boolean isReconn;
             String errorType;
             Class<? extends Throwable> tClass = t.getClass();
-            // runtime exception restart except JsonParseException
+            String message = String.format("%s : %s", tClass.getTypeName(), t.getMessage());
             if (t instanceof RuntimeException) {
+                // runtime exception restart except JsonParseException
                 isReconn = tClass != JsonParseException.class;
                 errorType = isReconn ? Status.RUNTIME_ERROR : Status.DATA_INVALID_ERROR;
             } else {
@@ -303,12 +304,12 @@ final class Streaming implements DataSynchronizer {
                     errorType = Status.WEBSOCKET_ERROR;
                 } else if (t instanceof IOException) {
                     errorType = Status.NETWORK_ERROR;
-                    forceToUseMaxRetryDelay = true;
                 } else {
                     errorType = Status.UNKNOWN_ERROR;
+                    forceToUseMaxRetryDelay = true;
                 }
             }
-            Status.ErrorInfo errorInfo = Status.ErrorInfo.of(errorType, t.getMessage());
+            Status.ErrorInfo errorInfo = Status.ErrorInfo.of(errorType, message);
             if (isReconn) {
                 logger.warn("FFC JAVA SDK: streaming webSocket will reconnect because of {}", t.getMessage());
                 updater.updateStatus(Status.StateType.INTERRUPTED, errorInfo);
