@@ -12,7 +12,6 @@ import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.FBClient;
 import co.featbit.server.exterior.InsightProcessor;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -105,9 +104,8 @@ public final class FBClientImp implements FBClient {
         checkNotNull(config, "FBConfig Should not be null");
         this.offline = config.isOffline();
         if (!this.offline) {
-            checkArgument(Base64.isBase64(envSecret), "envSecret is invalid");
-            checkArgument(Utils.isUrl(config.getStreamingURL()), "streaming uri is invalid");
-            checkArgument(Utils.isUrl(config.getEventURL()), "event uri is invalid");
+            checkArgument(Utils.isValidEnvSecret(envSecret), "envSecret is invalid");
+            checkArgument(Utils.isUrl(config.getStreamingURL()) || Utils.isUrl(config.getEventURL()), "streaming or event url is invalid");
         }
         ContextImp context = new ContextImp(envSecret, config);
         //init components
@@ -155,7 +153,7 @@ public final class FBClientImp implements FBClient {
                 logger.error("FFC JAVA SDK: exception encountered when waiting for data update", e);
             }
 
-            if (!this.storage.isInitialized() && !offline) {
+            if (!this.dataSynchronizer.isInitialized() && !offline) {
                 logger.info("FFC JAVA SDK: SDK was not successfully initialized");
             }
         }
@@ -313,7 +311,7 @@ public final class FBClientImp implements FBClient {
                 logger.warn("FFC JAVA SDK: isFlagKnown is called before Java SDK client is initialized for feature flag");
                 return false;
             }
-            return getFlagInternal(featureKey) == null;
+            return getFlagInternal(featureKey) != null;
         } catch (Exception ex) {
             logger.error("FFC JAVA SDK: unexpected error in isFlagKnown", ex);
         }
