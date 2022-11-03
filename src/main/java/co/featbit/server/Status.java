@@ -23,6 +23,8 @@ public abstract class Status {
     public static final String UNKNOWN_CLOSE_CODE = "Unknown close code";
     public static final String WEBSOCKET_ERROR = "WebSocket error";
 
+    public static final String DATA_SYNC_ERROR = "Data Sync error";
+
     /**
      * possible values for {@link DataSynchronizer}
      */
@@ -260,6 +262,12 @@ public abstract class Status {
         public DataUpdaterImpl(DataStorage storage) {
             this.storage = storage;
             this.currentState = State.initializingState();
+        }
+
+        // just use for test
+        DataUpdaterImpl(DataStorage storage, State state) {
+            this.storage = storage;
+            this.currentState = state;
         }
 
         private void handleErrorFromStorage(Exception ex, ErrorInfo errorInfo) {

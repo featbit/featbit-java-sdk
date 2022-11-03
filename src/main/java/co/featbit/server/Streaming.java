@@ -16,6 +16,7 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,17 +26,20 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import static co.featbit.server.Streaming.StreamingOps.isReconnOnClose;
+import static co.featbit.server.Streaming.StreamingOps.isReconnOnFailure;
+import static co.featbit.server.Streaming.StreamingOps.processDateAsync;
 
 final class Streaming implements DataSynchronizer {
 
@@ -47,8 +51,7 @@ final class Streaming implements DataSynchronizer {
     private static final Integer INVALID_REQUEST_CLOSE = 4003;
     private static final String INVALID_REQUEST_CLOSE_REASON = "invalid request";
     private static final Integer GOING_AWAY_CLOSE = 1001;
-    private static final String JUST_RECONN_REASON_REGISTERED = "reconn";
-    private static final int MAX_QUEUE_SIZE = 5;
+    private static final String CLOSE_AND_THEN_RECONN_BY_DATASYNC_ERROR = "data sync error";
     private static final Duration PING_INTERVAL = Duration.ofSeconds(10);
     private static final Duration AWAIT_TERMINATION = Duration.ofSeconds(2);
     private static final String AUTH_PARAMS = "?token=%s&type=server&version=2";
@@ -60,9 +63,9 @@ final class Streaming implements DataSynchronizer {
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean isWSConnected = new AtomicBoolean(false);
     private final AtomicInteger connCount = new AtomicInteger(0);
+    private final AtomicBoolean forceToCloseWS = new AtomicBoolean(false);
     private final CompletableFuture<Boolean> initFuture = new CompletableFuture<>();
     private final StreamingWebSocketListener listener = new DefaultWebSocketListener();
-    private final ThreadPoolExecutor storageUpdateExecutor;
     private final ScheduledThreadPoolExecutor pingScheduledExecutor;
     private final Status.DataUpdater updater;
     private final BasicConfig basicConfig;
@@ -70,8 +73,6 @@ final class Streaming implements DataSynchronizer {
     private final Integer maxRetryTimes;
     private final BackoffAndJitterStrategy strategy;
     private final String streamingURI;
-
-    private final Semaphore permits = new Semaphore(MAX_QUEUE_SIZE);
 
     private final OkHttpClient okHttpClient;
     WebSocket webSocket;
@@ -84,19 +85,7 @@ final class Streaming implements DataSynchronizer {
         this.strategy = new BackoffAndJitterStrategy(firstRetryDelay);
         this.maxRetryTimes = (maxRetryTimes == null || maxRetryTimes <= 0) ? Integer.MAX_VALUE : maxRetryTimes;
         this.okHttpClient = buildWebOkHttpClient();
-
-        // be sure of FIFO;
-        // the data sync is based on timestamp and versioned data
-        // if too many updates exceeds max num of wait queue, run in the main thread
-        this.storageUpdateExecutor = new ThreadPoolExecutor(1,
-                1,
-                0L,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(MAX_QUEUE_SIZE),
-                Utils.createThreadFactory("streaming-data-sync-worker-%d", true),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-        this.pingScheduledExecutor = new ScheduledThreadPoolExecutor(1,
-                Utils.createThreadFactory("streaming-periodic-ping-worker-%d", true));
+        this.pingScheduledExecutor = new ScheduledThreadPoolExecutor(1, Utils.createThreadFactory("streaming-periodic-ping-worker-%d", true));
     }
 
     @Override
@@ -105,6 +94,7 @@ final class Streaming implements DataSynchronizer {
         // flags reset to original state
         connCount.set(0);
         isWSConnected.set(false);
+        forceToCloseWS.set(false);
         connect();
         pingScheduledExecutor.scheduleAtFixedRate(this::ping, 0L, PING_INTERVAL.toMillis(), TimeUnit.MILLISECONDS);
         return initFuture;
@@ -119,12 +109,18 @@ final class Streaming implements DataSynchronizer {
     public void close() {
         logger.info("FFC JAVA SDK: streaming is stopping...");
         if (webSocket != null) {
+            forceToCloseWS.compareAndSet(false, true);
             webSocket.close(NORMAL_CLOSE, NORMAL_CLOSE_REASON);
+            if (!isWSConnected.get()) {
+                // websocket is not connected during the reconnecting
+                // force to clean up thread and conn pool
+                clearExecutor();
+            }
         }
     }
 
     private void ping() {
-        if (webSocket != null && isWSConnected.get()) {
+        if (webSocket != null && isWSConnected.get() && !forceToCloseWS.get()) {
             logger.trace("ping");
             String json = JsonHelper.serialize(new DataModel.DataSyncMessage(null));
             webSocket.send(json);
@@ -133,14 +129,13 @@ final class Streaming implements DataSynchronizer {
 
     private void clearExecutor() {
         Loggers.UPDATE_PROCESSOR.debug("streaming processor clean up thread and conn pool");
-        Utils.shutDownThreadPool("streaming-data-sync-worker", storageUpdateExecutor, AWAIT_TERMINATION);
         Utils.shutDownThreadPool("streaming-periodic-ping-worker", pingScheduledExecutor, AWAIT_TERMINATION);
         Utils.shutdownOKHttpClient("Streaming", okHttpClient);
     }
 
     private void connect() {
-        if (isWSConnected.get()) {
-            logger.error("FFC JAVA SDK: streaming websocket is already Connected");
+        if (isWSConnected.get() || forceToCloseWS.get()) {
+            logger.error("FFC JAVA SDK: streaming websocket is already Connected or Closed");
             return;
         }
         int count = connCount.getAndIncrement();
@@ -152,18 +147,15 @@ final class Streaming implements DataSynchronizer {
         String token = Utils.buildToken(basicConfig.getEnvSecret());
         String url = String.format(streamingURI.concat(AUTH_PARAMS), token);
         Headers headers = Utils.headersBuilderFor(httpConfig).build();
-        Request request = new Request.Builder()
-                .headers(headers)
-                .url(url)
-                .build();
+        Request request = new Request.Builder().headers(headers).url(url).build();
         logger.debug("Streaming WebSocket is connecting...");
         strategy.setGoodRunAtNow();
         webSocket = okHttpClient.newWebSocket(request, listener);
     }
 
-    private void reconnect(boolean forceToUseMaxRetryDelay) {
+    private void reconnect() {
         try {
-            Duration delay = strategy.nextDelay(forceToUseMaxRetryDelay);
+            Duration delay = strategy.nextDelay(false);
             long delayInMillis = delay.toMillis();
             logger.debug("Streaming WebSocket will reconnect in {} milliseconds", delayInMillis);
             Thread.sleep(delayInMillis);
@@ -181,38 +173,87 @@ final class Streaming implements DataSynchronizer {
         return builder.build();
     }
 
-    private Boolean processDateAsync(final DataModel.Data data) {
-        boolean opOK = false;
-        String eventType = data.getEventType();
-        Long version = data.getTimestamp();
-        Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> updatedData = data.toStorageType();
-        if (FULL_OPS.equalsIgnoreCase(eventType)) {
-            opOK = updater.init(updatedData, version);
-        } else if (PATCH_OPS.equalsIgnoreCase(eventType)) {
-            // streaming patch is a real time update
-            // patch data contains only one item in just one category.
-            // no data update is considered as a good operation
-            opOK = true;
-            for (Map.Entry<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> entry : updatedData.entrySet()) {
-                DataStoreTypes.Category category = entry.getKey();
-                for (Map.Entry<String, DataStoreTypes.Item> keyItem : entry.getValue().entrySet()) {
-                    opOK = updater.upsert(category, keyItem.getKey(), keyItem.getValue(), version);
+    static final class StreamingOps {
+        static Boolean processDateAsync(Status.DataUpdater updater, DataModel.Data data, AtomicBoolean initialized, CompletableFuture<Boolean> initFuture) {
+            boolean opOK = false;
+            String eventType = data.getEventType();
+            Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> updatedData = data.toStorageType();
+            if (FULL_OPS.equalsIgnoreCase(eventType)) {
+                opOK = updater.init(updatedData, data.getTimestamp());
+            } else if (PATCH_OPS.equalsIgnoreCase(eventType)) {
+                // streaming patch is a real time update
+                // no data update is considered as a good operation
+                opOK = updatedData.entrySet().stream()
+                        .flatMap(entry -> entry.getValue().values().stream().map(item -> ImmutablePair.of(entry.getKey(), item)))
+                        .sorted(Comparator.comparingLong(pair -> pair.getRight().getTimestamp()))
+                        .collect(Collectors.toList())
+                        .stream()
+                        .allMatch(pair -> updater.upsert(pair.getLeft(), pair.getRight().getId(), pair.getRight(), pair.getRight().getTimestamp()));
+            }
+            if (opOK) {
+                logger.debug("processing data is well done");
+                updater.updateStatus(Status.StateType.OK, null);
+                if (initialized.compareAndSet(false, true)) {
+                    initFuture.complete(true);
                 }
             }
+            return opOK;
         }
-        if (opOK) {
-            if (initialized.compareAndSet(false, true)) {
-                initFuture.complete(true);
+
+        static boolean isReconnOnClose(Status.DataUpdater updater, int code, String reason) {
+            boolean isReconn = false;
+            // close conn if the code is 1000 or 4003
+            // any other close code will cause a reconnecting to server
+            String message = NOT_RECONN_CLOSE_REASON.get(code);
+            if (message == null) {
+                isReconn = true;
+                message = StringUtils.isEmpty(reason) ? "unexpected close" : reason;
             }
-            logger.debug("processing data is well done");
-            updater.updateStatus(Status.StateType.OK, null);
-        } else {
-            // reconnect to server to get back data after data storage failed
-            // the reason is gathered by DataUpdater
-            // close code 1001 means peer going away
-            webSocket.close(GOING_AWAY_CLOSE, JUST_RECONN_REASON_REGISTERED);
+            logger.debug("Streaming WebSocket close reason: {}", message);
+            if (isReconn) {
+                // if code is not 1001, it's an unknown close code received by server
+                String errorType = (code == 1001) ? Status.DATA_SYNC_ERROR : Status.UNKNOWN_CLOSE_CODE;
+                updater.updateStatus(Status.StateType.INTERRUPTED, Status.ErrorInfo.of(errorType, reason));
+            } else if (code == INVALID_REQUEST_CLOSE) {
+                // authorization error
+                updater.updateStatus(Status.StateType.OFF, Status.ErrorInfo.of(Status.REQUEST_INVALID_ERROR, reason));
+            } else if (code == NORMAL_CLOSE) {
+                // normal close by client peer
+                updater.updateStatus(Status.StateType.OFF, null);
+            }
+            return isReconn;
         }
-        return opOK;
+
+        static boolean isReconnOnFailure(Status.DataUpdater updater, Throwable t) {
+            boolean isReconn;
+            String errorType;
+            Class<? extends Throwable> tClass = t.getClass();
+            String message = String.format("%s : %s", tClass.getTypeName(), t.getMessage());
+            if (t instanceof RuntimeException) {
+                // runtime exception restart except JsonParseException
+                isReconn = tClass != JsonParseException.class;
+                errorType = isReconn ? Status.RUNTIME_ERROR : Status.DATA_INVALID_ERROR;
+            } else {
+                isReconn = true;
+                if (WEBSOCKET_EXCEPTION.contains(tClass)) {
+                    errorType = Status.WEBSOCKET_ERROR;
+                } else if (t instanceof IOException) {
+                    errorType = Status.NETWORK_ERROR;
+                } else {
+                    errorType = Status.UNKNOWN_ERROR;
+                }
+            }
+            Status.ErrorInfo errorInfo = Status.ErrorInfo.of(errorType, message);
+            if (isReconn) {
+                logger.warn("FFC JAVA SDK: streaming webSocket will reconnect because of {}", t.getMessage());
+                updater.updateStatus(Status.StateType.INTERRUPTED, errorInfo);
+            } else {
+                logger.error("FFC JAVA SDK: streaming webSocket Failure", t);
+                updater.updateStatus(Status.StateType.OFF, errorInfo);
+            }
+            return isReconn;
+        }
+
     }
 
     final class DefaultWebSocketListener extends StreamingWebSocketListener {
@@ -225,14 +266,11 @@ final class Streaming implements DataSynchronizer {
             if (DataModel.StreamingMessage.DATA_SYNC.equalsIgnoreCase(message.getMessageType())) {
                 logger.debug("Streaming WebSocket is processing data");
                 DataModel.All all = JsonHelper.deserialize(text, DataModel.All.class);
-                if (all.isProcessData()) {
-                    try {
-                        permits.acquire();
-                        CompletableFuture
-                                .supplyAsync(() -> processDateAsync(all.data()), storageUpdateExecutor)
-                                .whenComplete((res, exception) -> permits.release());
-                    } catch (InterruptedException ignore) {
-                    }
+                if (all.isProcessData() && !processDateAsync(updater, all.data(), initialized, initFuture)) {
+                    // reconnect to server to get back data after data storage failed
+                    // the reason is gathered by DataUpdater
+                    // close code 1001 means peer going away
+                    webSocket.close(GOING_AWAY_CLOSE, CLOSE_AND_THEN_RECONN_BY_DATASYNC_ERROR);
                 }
             }
         }
@@ -256,31 +294,10 @@ final class Streaming implements DataSynchronizer {
 
         @Override
         public final void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
-            boolean isReconn = false;
-            // close conn if the code is 1000 or 4003
-            // any other close code will cause a reconnecting to server
-            String message = NOT_RECONN_CLOSE_REASON.get(code);
-            if (message == null) {
-                isReconn = true;
-                message = StringUtils.isEmpty(reason) ? "unexpected close" : reason;
-            }
-            logger.debug("Streaming WebSocket close reason: {}", message);
             isWSConnected.compareAndSet(true, false);
-
-            if (isReconn) {
-                // if code is not 1001, it's an unknown close code received by server
-                if (!JUST_RECONN_REASON_REGISTERED.equals(reason)) {
-                    updater.updateStatus(Status.StateType.INTERRUPTED, Status.ErrorInfo.of(Status.UNKNOWN_CLOSE_CODE, reason));
-                }
-                reconnect(false);
+            if (isReconnOnClose(updater, code, reason)) {
+                reconnect();
             } else {
-                // authorization error
-                if (code == INVALID_REQUEST_CLOSE) {
-                    updater.updateStatus(Status.StateType.OFF, Status.ErrorInfo.of(Status.REQUEST_INVALID_ERROR, reason));
-                } else {
-                    // normal close by client peer
-                    updater.updateStatus(Status.StateType.OFF, null);
-                }
                 // clean up thread and conn pool
                 clearExecutor();
             }
@@ -289,34 +306,9 @@ final class Streaming implements DataSynchronizer {
         @Override
         public final void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, @Nullable Response response) {
             isWSConnected.compareAndSet(true, false);
-            boolean forceToUseMaxRetryDelay = false;
-            boolean isReconn;
-            String errorType;
-            Class<? extends Throwable> tClass = t.getClass();
-            String message = String.format("%s : %s", tClass.getTypeName(), t.getMessage());
-            if (t instanceof RuntimeException) {
-                // runtime exception restart except JsonParseException
-                isReconn = tClass != JsonParseException.class;
-                errorType = isReconn ? Status.RUNTIME_ERROR : Status.DATA_INVALID_ERROR;
+            if (isReconnOnFailure(updater, t)) {
+                reconnect();
             } else {
-                isReconn = true;
-                if (WEBSOCKET_EXCEPTION.contains(tClass)) {
-                    errorType = Status.WEBSOCKET_ERROR;
-                } else if (t instanceof IOException) {
-                    errorType = Status.NETWORK_ERROR;
-                } else {
-                    errorType = Status.UNKNOWN_ERROR;
-                    forceToUseMaxRetryDelay = true;
-                }
-            }
-            Status.ErrorInfo errorInfo = Status.ErrorInfo.of(errorType, message);
-            if (isReconn) {
-                logger.warn("FFC JAVA SDK: streaming webSocket will reconnect because of {}", t.getMessage());
-                updater.updateStatus(Status.StateType.INTERRUPTED, errorInfo);
-                reconnect(forceToUseMaxRetryDelay);
-            } else {
-                logger.error("FFC JAVA SDK: streaming webSocket Failure", t);
-                updater.updateStatus(Status.StateType.OFF, errorInfo);
                 // clean up thread and conn pool
                 clearExecutor();
             }
