@@ -116,3 +116,6 @@ fabric.properties
 # test data
 /src/test/resources/simplelogger.properties
 /src/test/java/co/featbit/Demos.java
+
+#sonarlint
+/.idea/sonarlint/issuestore/index.pb
