@@ -225,6 +225,13 @@ public interface FBClient extends Closeable {
     void flush();
 
     /**
+     * register a user
+     *
+     * @param user user to register
+     */
+    void identify(FBUser user);
+
+    /**
      * tracks that a user performed an event and provides a default numeric value for custom metrics
      *
      * @param user      the user that performed the event

@@ -399,6 +399,16 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
+    public void identify(FBUser user) {
+        if (user == null) {
+            Loggers.CLIENT.warn("FFC JAVA SDK: user invalid");
+            return;
+        }
+        InsightTypes.Event event = InsightTypes.UserEvent.of(user);
+        insightProcessor.send(event);
+    }
+
+    @Override
     public void trackMetric(FBUser user, String eventName) {
         trackMetric(user, eventName, 1.0);
     }

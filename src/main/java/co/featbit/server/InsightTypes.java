@@ -51,6 +51,27 @@ public abstract class InsightTypes {
         }
     }
 
+    @JsonAdapter(UserEventSerializer.class)
+    final static class UserEvent extends Event {
+        private UserEvent(FBUser user) {
+            super(user);
+        }
+
+        static UserEvent of(FBUser user) {
+            return new UserEvent(user);
+        }
+
+        @Override
+        public boolean isSendEvent() {
+            return user != null;
+        }
+
+        @Override
+        public Event add(Object element) {
+            return this;
+        }
+    }
+
     @JsonAdapter(FlagEventSerializer.class)
     final static class FlagEvent extends Event {
         private final List<FlagEventVariation> userVariations = new ArrayList<>();
@@ -170,6 +191,13 @@ public abstract class InsightTypes {
         }
     }
 
+    final static class UserEventSerializer implements JsonSerializer<UserEvent> {
+        @Override
+        public JsonElement serialize(UserEvent userEvent, Type type, JsonSerializationContext jsonSerializationContext) {
+            return serializeUser(userEvent.getUser());
+        }
+    }
+
     final static class FlagEventSerializer implements JsonSerializer<FlagEvent> {
 
         @Override
@@ -181,7 +209,7 @@ public abstract class InsightTypes {
                 JsonObject var = new JsonObject();
                 var.addProperty("featureFlagKey", variation.getFeatureFlagKeyName());
                 var.addProperty("sendToExperiment", variation.getVariation().isSendToExperiment());
-                var.addProperty("timestamp", Instant.now().toEpochMilli());
+                var.addProperty("timestamp", variation.getTimestamp());
                 JsonObject v = new JsonObject();
                 v.addProperty("id", variation.getVariation().getIndex());
                 v.addProperty("value", variation.getVariation().getValue());
@@ -232,7 +260,7 @@ public abstract class InsightTypes {
     }
 
     enum InsightMessageType {
-        FLAGS, FLUSH, SHUTDOWN, METRICS,
+        FLAGS, FLUSH, SHUTDOWN, METRICS, USERS
     }
 
     static final class InsightMessage {
