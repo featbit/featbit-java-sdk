@@ -17,7 +17,6 @@ import static co.featbit.server.Status.DATA_STORAGE_UPDATE_ERROR;
 import static co.featbit.server.Status.StateType.INITIALIZING;
 import static co.featbit.server.Status.StateType.INTERRUPTED;
 import static co.featbit.server.Status.StateType.OFF;
-import static co.featbit.server.Status.StateType.OK;
 import static co.featbit.server.exterior.DataStoreTypes.DATATEST;
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
@@ -70,7 +69,7 @@ class DataUpdaterTest {
         Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData = ImmutableMap.of(DATATEST, items);
         dataUpdater.init(allData, 1L);
         assertEquals(INITIALIZING, dataUpdater.getCurrentState().getStateType());
-        assertEquals(DATA_STORAGE_INIT_ERROR, dataUpdater.getCurrentState().getInfo().getErrorType());
+        assertEquals(DATA_STORAGE_INIT_ERROR, dataUpdater.getCurrentState().getErrorTrack().getErrorType());
         assertFalse(dataUpdater.storageInitialized());
     }
 
@@ -98,7 +97,7 @@ class DataUpdaterTest {
         support.replayAll();
         dataUpdater.upsert(DATATEST, item1.getId(), item1, 1L);
         assertEquals(INTERRUPTED, dataUpdater.getCurrentState().getStateType());
-        assertEquals(DATA_STORAGE_UPDATE_ERROR, dataUpdater.getCurrentState().getInfo().getErrorType());
+        assertEquals(DATA_STORAGE_UPDATE_ERROR, dataUpdater.getCurrentState().getErrorTrack().getErrorType());
         assertFalse(dataUpdater.storageInitialized());
     }
 
@@ -106,11 +105,11 @@ class DataUpdaterTest {
     void testUpdateStatus() {
         dataStorage = new InMemoryDataStorage();
         dataUpdater = new Status.DataUpdaterImpl(dataStorage);
-        dataUpdater.updateStatus(INTERRUPTED, null);
+        dataUpdater.updateStatus(Status.State.interruptedState("some type", "some reason"));
         assertEquals(INITIALIZING, dataUpdater.getCurrentState().getStateType());
         dataUpdater = null;
         dataUpdater = new Status.DataUpdaterImpl(dataStorage, Status.State.OKState());
-        dataUpdater.updateStatus(INTERRUPTED, null);
+        dataUpdater.updateStatus(Status.State.interruptedState("some type", "some reason"));
         assertEquals(INTERRUPTED, dataUpdater.getCurrentState().getStateType());
     }
 
@@ -120,10 +119,10 @@ class DataUpdaterTest {
         dataUpdater = new Status.DataUpdaterImpl(dataStorage);
         dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater);
 
-        dataUpdater.updateStatus(OK, null);
+        dataUpdater.updateStatus(Status.State.OKState());
         assertTrue(dataUpdateStatusProvider.waitForOKState(Duration.ofMillis(100)));
 
-        dataUpdater.updateStatus(OFF, null);
+        dataUpdater.updateStatus(Status.State.normalOFFState());
         assertTrue(dataUpdateStatusProvider.waitFor(OFF, Duration.ofMillis(100)));
     }
 
@@ -136,7 +135,7 @@ class DataUpdaterTest {
         new Thread(() -> {
             try {
                 Thread.sleep(50);
-                dataUpdater.updateStatus(OK, null);
+                dataUpdater.updateStatus(Status.State.OKState());
             } catch (InterruptedException ignored) {
             }
         }).start();
@@ -168,7 +167,7 @@ class DataUpdaterTest {
         new Thread(() -> {
             try {
                 Thread.sleep(50);
-                dataUpdater.updateStatus(OFF, null);
+                dataUpdater.updateStatus(Status.State.normalOFFState());
             } catch (InterruptedException ignored) {
             }
         }).start();

@@ -346,7 +346,7 @@ public final class FBClientImp implements FBClient {
                 Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allDataInStorageType = allData.toStorageType();
                 boolean res = dataUpdater.init(allDataInStorageType, version);
                 if (res) {
-                    dataUpdater.updateStatus(Status.StateType.OK, null);
+                    dataUpdater.updateStatus(Status.State.OKState());
                 }
                 return res;
             }

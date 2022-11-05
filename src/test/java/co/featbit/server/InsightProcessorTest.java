@@ -113,7 +113,7 @@ class InsightProcessorTest {
             CountDownLatch threadCounter = new CountDownLatch(5);
             sender.waitObject = waitObject;
             sender.threadCounter = threadCounter;
-            for (int i = 0; i < 5; i++){
+            for (int i = 0; i < 5; i++) {
                 insightProcessor.send(InsightTypes.UserEvent.of(user1));
                 insightProcessor.flush();
                 sender.getLastSendingJsonInfo(200);
@@ -125,7 +125,8 @@ class InsightProcessorTest {
             insightProcessor.flush();
             insightProcessor.send(InsightTypes.UserEvent.of(user3));
             insightProcessor.flush();
-            synchronized (waitObject){
+            Thread.sleep(100);
+            synchronized (waitObject) {
                 waitObject.notifyAll();
             }
             TestSenders.SendingJsonInfo res = sender.getLastSendingJsonInfo(200);

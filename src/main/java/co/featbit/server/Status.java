@@ -61,21 +61,21 @@ public abstract class Status {
         OFF
     }
 
-    public static class ErrorInfo implements Serializable {
+    public static class ErrorTrack implements Serializable {
         private final String errorType;
         private final String message;
 
-        private ErrorInfo(String errorType, String message) {
+        private ErrorTrack(String errorType, String message) {
             this.errorType = errorType;
             this.message = message;
         }
 
-        public static ErrorInfo of(String errorType, String message) {
-            return new ErrorInfo(errorType, message);
+        public static ErrorTrack of(String errorType, String message) {
+            return new ErrorTrack(errorType, message);
         }
 
-        public static ErrorInfo of(String errorType) {
-            return new ErrorInfo(errorType, null);
+        public static ErrorTrack of(String errorType) {
+            return new ErrorTrack(errorType, null);
         }
 
         public String getErrorType() {
@@ -90,8 +90,8 @@ public abstract class Status {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ErrorInfo errorInfo = (ErrorInfo) o;
-            return Objects.equals(errorType, errorInfo.errorType) && Objects.equals(message, errorInfo.message);
+            ErrorTrack errorTrack = (ErrorTrack) o;
+            return Objects.equals(errorType, errorTrack.errorType) && Objects.equals(message, errorTrack.message);
         }
 
         @Override
@@ -108,12 +108,12 @@ public abstract class Status {
     public static final class State implements Serializable {
         private final StateType stateType;
         private final Instant stateSince;
-        private final ErrorInfo info;
+        private final ErrorTrack errorTrack;
 
-        private State(StateType stateType, Instant stateSince, ErrorInfo info) {
+        private State(StateType stateType, Instant stateSince, ErrorTrack errorTrack) {
             this.stateType = stateType;
             this.stateSince = stateSince;
-            this.info = info;
+            this.errorTrack = errorTrack;
         }
 
         public static State initializingState() {
@@ -129,15 +129,19 @@ public abstract class Status {
         }
 
         public static State errorOFFState(String errorType, String message) {
-            return new State(StateType.OFF, Instant.now(), ErrorInfo.of(errorType, message));
+            return new State(StateType.OFF, Instant.now(), ErrorTrack.of(errorType, message));
         }
 
         public static State interruptedState(String errorType, String message) {
-            return new State(StateType.INTERRUPTED, Instant.now(), ErrorInfo.of(errorType, message));
+            return new State(StateType.INTERRUPTED, Instant.now(), ErrorTrack.of(errorType, message));
+        }
+
+        public static State interruptedState(ErrorTrack errorTrack) {
+            return new State(StateType.INTERRUPTED, Instant.now(), errorTrack);
         }
 
         public static State of(StateType stateType, Instant stateSince, String errorType, String message) {
-            return new State(stateType, stateSince, ErrorInfo.of(errorType, message));
+            return new State(stateType, stateSince, ErrorTrack.of(errorType, message));
         }
 
         public StateType getStateType() {
@@ -148,13 +152,13 @@ public abstract class Status {
             return stateSince;
         }
 
-        public ErrorInfo getInfo() {
-            return info;
+        public ErrorTrack getErrorTrack() {
+            return errorTrack;
         }
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(this).add("stateType", stateType).add("stateSince", stateSince).add("info", info).toString();
+            return MoreObjects.toStringHelper(this).add("stateType", stateType).add("stateSince", stateSince).add("info", errorTrack).toString();
         }
 
         @Override
@@ -162,12 +166,12 @@ public abstract class Status {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             State state = (State) o;
-            return stateType == state.stateType && Objects.equals(stateSince, state.stateSince) && Objects.equals(info, state.info);
+            return stateType == state.stateType && Objects.equals(stateSince, state.stateSince) && Objects.equals(errorTrack, state.errorTrack);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(stateType, stateSince, info);
+            return Objects.hash(stateType, stateSince, errorTrack);
         }
     }
 
@@ -226,9 +230,8 @@ public abstract class Status {
          * because {@link StateType#INTERRUPTED} is only meaningful after a successful startup.
          *
          * @param newState the new state of {@link DataSynchronizer}
-         * @param message  an error message or null
          */
-        void updateStatus(StateType newState, ErrorInfo message);
+        void updateStatus(State newState);
 
         /**
          * return the latest version of {@link DataStorage}
@@ -270,9 +273,9 @@ public abstract class Status {
             this.currentState = state;
         }
 
-        private void handleErrorFromStorage(Exception ex, ErrorInfo errorInfo) {
+        private void handleErrorFromStorage(Exception ex, ErrorTrack errorTrack) {
             Loggers.DATA_STORAGE.error("FFC JAVA SDK: Data Storage error: {}, UpdateProcessor will attempt to receive the data", ex.getMessage());
-            updateStatus(StateType.INTERRUPTED, errorInfo);
+            updateStatus(State.interruptedState(errorTrack));
         }
 
         @Override
@@ -280,7 +283,7 @@ public abstract class Status {
             try {
                 storage.init(allData, version);
             } catch (Exception ex) {
-                handleErrorFromStorage(ex, ErrorInfo.of(DATA_STORAGE_INIT_ERROR, ex.getMessage()));
+                handleErrorFromStorage(ex, ErrorTrack.of(DATA_STORAGE_INIT_ERROR, ex.getMessage()));
                 return false;
             }
             return true;
@@ -291,29 +294,35 @@ public abstract class Status {
             try {
                 return storage.upsert(category, key, item, version);
             } catch (Exception ex) {
-                handleErrorFromStorage(ex, ErrorInfo.of(DATA_STORAGE_UPDATE_ERROR, ex.getMessage()));
+                handleErrorFromStorage(ex, ErrorTrack.of(DATA_STORAGE_UPDATE_ERROR, ex.getMessage()));
                 return false;
             }
         }
 
         @Override
-        public void updateStatus(StateType newState, ErrorInfo message) {
+        public void updateStatus(State newState) {
             if (newState == null) {
                 return;
             }
             synchronized (lockObject) {
-                StateType oldOne = currentState.getStateType();
-                StateType newState1 = newState;
+                StateType oldStateType = currentState.getStateType();
+                StateType newStateType = newState.getStateType();
+                ErrorTrack error = newState.getErrorTrack();
+                Instant stateSince;
                 // interrupted state is only meaningful after initialization
-                if (newState1 == StateType.INTERRUPTED && oldOne == StateType.INITIALIZING) {
-                    newState1 = StateType.INITIALIZING;
+                if (newStateType == StateType.INTERRUPTED && oldStateType == StateType.INITIALIZING) {
+                    newStateType = StateType.INITIALIZING;
                 }
 
-                if (newState1 != oldOne || message != null) {
-                    Instant stateSince = newState1 == oldOne ? currentState.getStateSince() : Instant.now();
-                    currentState = new State(newState1, stateSince, message);
-                    lockObject.notifyAll();
+                if (newStateType != oldStateType) {
+                    stateSince = Instant.now();
+                } else if (error != null) {
+                    stateSince = currentState.getStateSince();
+                } else {
+                    return;
                 }
+                currentState = new State(newStateType, stateSince, error);
+                lockObject.notifyAll();
             }
 
         }

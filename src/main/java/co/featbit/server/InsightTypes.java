@@ -260,26 +260,28 @@ public abstract class InsightTypes {
     }
 
     enum InsightMessageType {
-        FLAGS, FLUSH, SHUTDOWN, METRICS, USERS
+        FLAGS, FLUSH, SHUTDOWN, METRICS, USERS, STATISTICS
     }
 
     static final class InsightMessage {
         private final InsightMessageType type;
         private final Event event;
-        private final Semaphore waitLock;
+        private final Object waitLock;
 
         // waitLock is initialized only when you need to wait until the message is completely handled
         // Ex, shutdown, in this case, we should to wait until all events are sent to server
-        InsightMessage(InsightMessageType type, Event event, boolean awaitTermination) {
+        InsightMessage(InsightMessageType type, Event event, boolean awaitToComplete) {
             this.type = type;
             this.event = event;
             // permit = 0, so wait until a permit releases
-            this.waitLock = awaitTermination ? new Semaphore(0) : null;
+            this.waitLock = awaitToComplete ? new Object() : null;
         }
 
         public void completed() {
             if (waitLock != null) {
-                waitLock.release();
+                synchronized (waitLock) {
+                    waitLock.notifyAll();
+                }
             }
         }
 
@@ -288,10 +290,12 @@ public abstract class InsightTypes {
                 return;
             }
             while (true) {
-                try {
-                    waitLock.acquire();
-                    return;
-                } catch (InterruptedException ignore) {
+                synchronized (waitLock) {
+                    try {
+                        waitLock.wait();
+                        return;
+                    } catch (InterruptedException ignore) {
+                    }
                 }
             }
 

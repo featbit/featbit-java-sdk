@@ -2,6 +2,7 @@ package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
 import co.featbit.server.exterior.DataStoreTypes;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.JsonAdapter;
@@ -110,8 +111,8 @@ public abstract class DataModel {
      */
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
     static class Data implements JsonHelper.AfterJsonParseDeserializable {
-
-        private final String eventType;
+        @VisibleForTesting
+        /*private*/ String eventType;
         private final List<FeatureFlag> featureFlags;
         private final List<Segment> segments;
         private Long timestamp;
@@ -356,6 +357,7 @@ public abstract class DataModel {
                 this.variationMap = builder.build();
             }
         }
+
         @Override
         public int compareTo(@NotNull DataStoreTypes.Item o) {
             return timestamp.compareTo(o.getTimestamp());

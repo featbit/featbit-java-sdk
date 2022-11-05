@@ -27,7 +27,7 @@ class InMemoryDataStorageTest {
     }
 
     @Test
-    void testDefaultVersion(){
+    void testDefaultVersion() {
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
     }
