@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * this class just tests streaming operations, not covers the connection test
  */
-class StreamingOpsTest extends StreamingBaseTest {
+class StreamingOpsTest extends ComponentBaseTest {
     private DataStorage dataStorage;
 
     private Status.DataUpdaterImpl dataUpdaterImpl;
