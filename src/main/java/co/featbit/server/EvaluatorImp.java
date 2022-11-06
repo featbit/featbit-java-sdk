@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 final class EvaluatorImp extends Evaluator {
 
-    public EvaluatorImp(Getter<DataModel.FeatureFlag> flagGetter, Getter<DataModel.Segment> segmentGetter) {
+    EvaluatorImp(Getter<DataModel.FeatureFlag> flagGetter, Getter<DataModel.Segment> segmentGetter) {
         super(flagGetter, segmentGetter);
     }
 

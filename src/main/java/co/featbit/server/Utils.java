@@ -2,6 +2,7 @@ package co.featbit.server;
 
 import co.featbit.server.exterior.HttpConfig;
 import com.google.common.annotations.Beta;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableMap;
 import okhttp3.Authenticator;
 import okhttp3.Cache;
@@ -203,6 +204,13 @@ public abstract class Utils {
             default:
                 return false;
         }
+    }
+
+    public static boolean isValidEnvSecret(String s) {
+        if (StringUtils.isBlank(s)) {
+            return false;
+        }
+        return CharMatcher.ascii().matchesAllOf(s);
     }
 
 }

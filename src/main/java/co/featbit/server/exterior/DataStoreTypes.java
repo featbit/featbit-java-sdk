@@ -93,10 +93,12 @@ public abstract class DataStoreTypes {
      * interface for the object to represent a versioned/timestamped data
      */
 
-    public interface Item {
-        Integer FFC_FEATURE_FLAG = 100;
-        Integer FFC_ARCHIVED_ITEM = 200;
+    public interface Item extends Comparable<Item> {
+        Integer FB_FEATURE_FLAG = 100;
+        Integer FB_ARCHIVED_ITEM = 200;
         Integer FFC_SEGMENT = 300;
+
+        Integer FFC_TEST_ITEM = 400;
 
         /**
          * return the unique id

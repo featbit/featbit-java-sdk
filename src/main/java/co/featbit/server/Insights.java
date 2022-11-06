@@ -49,6 +49,8 @@ abstract class Insights {
                     putEventAsync(InsightTypes.InsightMessageType.FLAGS, event);
                 } else if (event instanceof InsightTypes.MetricEvent) {
                     putEventAsync(InsightTypes.InsightMessageType.METRICS, event);
+                } else if (event instanceof InsightTypes.UserEvent) {
+                    putEventAsync(InsightTypes.InsightMessageType.USERS, event);
                 } else {
                     Loggers.EVENTS.debug("ignore event type: {}", event.getClass().getName());
                 }
@@ -133,7 +135,7 @@ abstract class Insights {
                             Loggers.EVENTS.debug("paload size: {}", partition.size());
                         });
             } catch (Exception unexpected) {
-                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in sending payload: {}", unexpected.getMessage());
+                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in sending payload", unexpected);
                 return false;
             }
             return true;
@@ -187,6 +189,7 @@ abstract class Insights {
                             switch (message.getType()) {
                                 case FLAGS:
                                 case METRICS:
+                                case USERS:
                                     putEventToNextBuffer(message.getEvent());
                                     break;
                                 case FLUSH:
@@ -199,12 +202,12 @@ abstract class Insights {
                             }
                             message.completed();
                         } catch (Exception unexpected) {
-                            Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher {}", unexpected.getMessage());
+                            Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher", unexpected);
                         }
                     }
                 } catch (InterruptedException ignore) {
                 } catch (Exception unexpected) {
-                    Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher {}", unexpected.getMessage());
+                    Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher", unexpected);
                 }
             }
         }
@@ -266,7 +269,7 @@ abstract class Insights {
                     config.getRight().close();
                 }
             } catch (Exception unexpected) {
-                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error when closing event dispatcher: {}", unexpected.getMessage());
+                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error when closing event dispatcher", unexpected);
             }
         }
 

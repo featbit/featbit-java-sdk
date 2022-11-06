@@ -51,6 +51,27 @@ public abstract class InsightTypes {
         }
     }
 
+    @JsonAdapter(UserEventSerializer.class)
+    final static class UserEvent extends Event {
+        private UserEvent(FBUser user) {
+            super(user);
+        }
+
+        static UserEvent of(FBUser user) {
+            return new UserEvent(user);
+        }
+
+        @Override
+        public boolean isSendEvent() {
+            return user != null;
+        }
+
+        @Override
+        public Event add(Object element) {
+            return this;
+        }
+    }
+
     @JsonAdapter(FlagEventSerializer.class)
     final static class FlagEvent extends Event {
         private final List<FlagEventVariation> userVariations = new ArrayList<>();
@@ -170,6 +191,13 @@ public abstract class InsightTypes {
         }
     }
 
+    final static class UserEventSerializer implements JsonSerializer<UserEvent> {
+        @Override
+        public JsonElement serialize(UserEvent userEvent, Type type, JsonSerializationContext jsonSerializationContext) {
+            return serializeUser(userEvent.getUser());
+        }
+    }
+
     final static class FlagEventSerializer implements JsonSerializer<FlagEvent> {
 
         @Override
@@ -181,7 +209,7 @@ public abstract class InsightTypes {
                 JsonObject var = new JsonObject();
                 var.addProperty("featureFlagKey", variation.getFeatureFlagKeyName());
                 var.addProperty("sendToExperiment", variation.getVariation().isSendToExperiment());
-                var.addProperty("timestamp", Instant.now().toEpochMilli());
+                var.addProperty("timestamp", variation.getTimestamp());
                 JsonObject v = new JsonObject();
                 v.addProperty("id", variation.getVariation().getIndex());
                 v.addProperty("value", variation.getVariation().getValue());
@@ -232,26 +260,28 @@ public abstract class InsightTypes {
     }
 
     enum InsightMessageType {
-        FLAGS, FLUSH, SHUTDOWN, METRICS,
+        FLAGS, FLUSH, SHUTDOWN, METRICS, USERS, STATISTICS
     }
 
     static final class InsightMessage {
         private final InsightMessageType type;
         private final Event event;
-        private final Semaphore waitLock;
+        private final Object waitLock;
 
         // waitLock is initialized only when you need to wait until the message is completely handled
         // Ex, shutdown, in this case, we should to wait until all events are sent to server
-        InsightMessage(InsightMessageType type, Event event, boolean awaitTermination) {
+        InsightMessage(InsightMessageType type, Event event, boolean awaitToComplete) {
             this.type = type;
             this.event = event;
             // permit = 0, so wait until a permit releases
-            this.waitLock = awaitTermination ? new Semaphore(0) : null;
+            this.waitLock = awaitToComplete ? new Object() : null;
         }
 
         public void completed() {
             if (waitLock != null) {
-                waitLock.release();
+                synchronized (waitLock) {
+                    waitLock.notifyAll();
+                }
             }
         }
 
@@ -260,10 +290,12 @@ public abstract class InsightTypes {
                 return;
             }
             while (true) {
-                try {
-                    waitLock.acquire();
-                    return;
-                } catch (InterruptedException ignore) {
+                synchronized (waitLock) {
+                    try {
+                        waitLock.wait();
+                        return;
+                    } catch (InterruptedException ignore) {
+                    }
                 }
             }
 

@@ -2,11 +2,12 @@ package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
 import co.featbit.server.exterior.DataStoreTypes;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.JsonAdapter;
+import org.jetbrains.annotations.NotNull;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -47,7 +48,12 @@ public abstract class DataModel {
 
         @Override
         public Integer getType() {
-            return FFC_ARCHIVED_ITEM;
+            return FB_ARCHIVED_ITEM;
+        }
+
+        @Override
+        public int compareTo(@NotNull DataStoreTypes.Item o) {
+            return timestamp.compareTo(o.getTimestamp());
         }
     }
 
@@ -105,8 +111,8 @@ public abstract class DataModel {
      */
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
     static class Data implements JsonHelper.AfterJsonParseDeserializable {
-
-        private final String eventType;
+        @VisibleForTesting
+        /*private*/ String eventType;
         private final List<FeatureFlag> featureFlags;
         private final List<Segment> segments;
         private Long timestamp;
@@ -228,6 +234,11 @@ public abstract class DataModel {
         public void afterDeserialization() {
             this.timestamp = updatedAt.getTime();
         }
+
+        @Override
+        public int compareTo(@NotNull DataStoreTypes.Item o) {
+            return timestamp.compareTo(o.getTimestamp());
+        }
     }
 
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
@@ -288,7 +299,7 @@ public abstract class DataModel {
 
         @Override
         public Integer getType() {
-            return FFC_FEATURE_FLAG;
+            return FB_FEATURE_FLAG;
         }
 
         public boolean exptIncludeAllTargets() {
@@ -345,6 +356,11 @@ public abstract class DataModel {
                 }
                 this.variationMap = builder.build();
             }
+        }
+
+        @Override
+        public int compareTo(@NotNull DataStoreTypes.Item o) {
+            return timestamp.compareTo(o.getTimestamp());
         }
     }
 
