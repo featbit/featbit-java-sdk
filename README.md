@@ -45,7 +45,7 @@ install the sdk in using maven
     <dependency>
         <groupId>co.featbit</groupId>
         <artifactId>Featbit-Java-SDK</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
     </dependency>
 </dependencies>
 ```

@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 public abstract class InsightTypes {
 
@@ -160,14 +159,18 @@ public abstract class InsightTypes {
         private final String eventName;
         private final Double numericValue;
         private final String appType = "javaserverside";
+        private final long timestamp;
 
-        Metric(String eventName, Double numericValue) {
+        Metric(String eventName, Double numericValue, long timestamp) {
             this.eventName = eventName;
             this.numericValue = numericValue;
+            this.timestamp = timestamp;
         }
 
         static Metric of(String eventName, Double numericValue) {
-            return new Metric(eventName, numericValue == null ? 1.0D : numericValue);
+            return new Metric(eventName,
+                    numericValue == null ? 1.0D : numericValue,
+                    Instant.now().toEpochMilli());
         }
 
         public String getEventName() {
@@ -188,6 +191,10 @@ public abstract class InsightTypes {
 
         public String getAppType() {
             return appType;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
         }
     }
 
@@ -235,6 +242,7 @@ public abstract class InsightTypes {
                 var.addProperty("eventName", metric.getEventName());
                 var.addProperty("numericValue", metric.getNumericValue());
                 var.addProperty("appType", metric.getAppType());
+                var.addProperty("timestamp", metric.getTimestamp());
                 array1.add(var);
             }
             json.add("metrics", array1);
