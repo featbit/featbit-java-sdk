@@ -40,7 +40,6 @@ abstract class FactoryImp {
         @Override
         public DataSynchronizer createDataSynchronizer(Context config, Status.DataUpdater dataUpdater) {
             Loggers.UPDATE_PROCESSOR.debug("Choose Streaming Update Processor");
-            firstRetryDelay = firstRetryDelay == null ? DEFAULT_FIRST_RETRY_DURATION : firstRetryDelay;
             return new Streaming(dataUpdater, config, firstRetryDelay, maxRetryTimes);
         }
     }
@@ -146,9 +145,9 @@ abstract class FactoryImp {
     static final class InsightProcessBuilderImpl extends InsightProcessorBuilder {
         @Override
         public DefaultSender createInsightEventSender(Context context) {
-            maxRetryTimes = maxRetryTimes < 0 ? DEFAULT_RETRY_TIMES : maxRetryTimes;
-            retryIntervalInMilliseconds = retryIntervalInMilliseconds <= 0 ? DEFAULT_RETRY_DELAY : retryIntervalInMilliseconds;
-            return new Senders.InsightEventSenderImp(context.http(), maxRetryTimes, Duration.ofMillis(retryIntervalInMilliseconds));
+            return new Senders.InsightEventSenderImp(context.http(),
+                    Math.min(maxRetryTimes, 3),
+                    Duration.ofMillis(Math.min(retryIntervalInMilliseconds, Duration.ofSeconds(1).toMillis())));
         }
 
         @Override
@@ -156,8 +155,8 @@ abstract class FactoryImp {
             DefaultSender sender = createInsightEventSender(context);
             return new Insights.InsightProcessorImpl(context.basicConfig().getEventURI(),
                     sender,
-                    Math.max(DEFAULT_FLUSH_INTERVAL, flushInterval),
-                    Math.max(DEFAULT_CAPACITY, capacity));
+                    Math.min(flushIntervalInMilliseconds, Duration.ofSeconds(3).toMillis()),
+                    Math.min(capacity, DEFAULT_CAPACITY));
         }
     }
 

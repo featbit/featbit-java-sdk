@@ -39,7 +39,7 @@ public abstract class HttpConfigurationBuilder implements HttpConfigFactory {
 
     /**
      * Sets the connection timeout. This is the time allowed for the SDK to make a socket connection to
-     * any of API. The default value is 10s
+     * any of API. The default value is 5s
      *
      * @param duration the connection timeout; null to use the default
      * @return the builder
@@ -51,7 +51,7 @@ public abstract class HttpConfigurationBuilder implements HttpConfigFactory {
 
     /**
      * Sets the read and write timeout. This is the time allowed for the SDK to read/write
-     * any of API. The default value is 15s
+     * any of API. The default value is 10s
      *
      * @param duration the read/write timeout; null to use the default
      * @return the builder

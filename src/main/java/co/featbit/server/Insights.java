@@ -67,7 +67,7 @@ abstract class Insights {
         @Override
         public void close() {
             if (closed.compareAndSet(false, true)) {
-                Loggers.EVENTS.info("FFC JAVA SDK: insight processor is stopping");
+                Loggers.EVENTS.info("FB JAVA SDK: insight processor is stopping");
                 Utils.shutDownThreadPool("insight-periodic-flush-worker", flushScheduledExecutor, AWAIT_TERMINATION);
                 //flush all the left events
                 putEventAsync(InsightTypes.InsightMessageType.FLUSH, null);
@@ -106,7 +106,7 @@ abstract class Insights {
             // if it reaches here, it means the application is probably doing tons of flag evaluations across many threads.
             // So if we wait for a space in the inbox, we risk a very serious slowdown of the app.
             // To avoid that, we'll just drop the event or you can increase the capacity of inbox
-            Loggers.EVENTS.warn("FFC JAVA SDK: events are being produced faster than they can be processed; some events will be dropped");
+            Loggers.EVENTS.warn("FB JAVA SDK: events are being produced faster than they can be processed; some events will be dropped");
             return false;
         }
 
@@ -135,7 +135,7 @@ abstract class Insights {
                             Loggers.EVENTS.debug("paload size: {}", partition.size());
                         });
             } catch (Exception unexpected) {
-                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in sending payload", unexpected);
+                Loggers.EVENTS.error("FB JAVA SDK: unexpected error in sending payload", unexpected);
                 return false;
             }
             return true;
@@ -202,12 +202,12 @@ abstract class Insights {
                             }
                             message.completed();
                         } catch (Exception unexpected) {
-                            Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher", unexpected);
+                            Loggers.EVENTS.error("FB JAVA SDK: unexpected error in event dispatcher", unexpected);
                         }
                     }
                 } catch (InterruptedException ignore) {
                 } catch (Exception unexpected) {
-                    Loggers.EVENTS.error("FFC JAVA SDK: unexpected error in event dispatcher", unexpected);
+                    Loggers.EVENTS.error("FB JAVA SDK: unexpected error in event dispatcher", unexpected);
                 }
             }
         }
@@ -269,7 +269,7 @@ abstract class Insights {
                     config.getRight().close();
                 }
             } catch (Exception unexpected) {
-                Loggers.EVENTS.error("FFC JAVA SDK: unexpected error when closing event dispatcher", unexpected);
+                Loggers.EVENTS.error("FB JAVA SDK: unexpected error when closing event dispatcher", unexpected);
             }
         }
 

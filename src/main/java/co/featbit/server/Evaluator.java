@@ -1,6 +1,8 @@
 package co.featbit.server;
 
+import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
+import co.featbit.commons.model.FlagState;
 import co.featbit.server.exterior.DataStoreTypes;
 import org.slf4j.Logger;
 
@@ -132,6 +134,19 @@ abstract class Evaluator {
         public String getName() {
             return name;
         }
+
+        private boolean isDefaultValue() {
+            return this.index.equals(NO_EVAL_RES);
+        }
+
+        public <T> EvalDetail<T> toEvalDetail(T value) {
+            return EvalDetail.of(value, this.reason, this.keyName, this.name);
+        }
+
+        public <T> FlagState<T> toFlagState(T value) {
+            return FlagState.of(EvalDetail.of(value, this.reason, this.keyName, this.name), !isDefaultValue());
+        }
+
     }
 
 }

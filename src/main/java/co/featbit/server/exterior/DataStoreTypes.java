@@ -35,8 +35,7 @@ public abstract class DataStoreTypes {
      * Applications should not need to reference this object directly. It is public so that custom data storage
      * implementations can determine what kinds of model objects may need to be stored.
      */
-
-    public final List<Category> FFC_ALL_CATS = ImmutableList.of(FEATURES, SEGMENTS, DATATEST);
+    public final List<Category> ALL_CATS = ImmutableList.of(FEATURES, SEGMENTS, DATATEST);
 
     private DataStoreTypes() {
     }

@@ -17,10 +17,14 @@ import java.time.Duration;
  *           .build();
  *       FBClient client = new FBClientImp(envSecret, config);
  * </code></pre>
+ * <p>
+ * Note that this class is in fact only internal use, it's not recommended to customize any behavior in this configuration.
+ * We just keep the same design pattern in the SDK
  */
 public abstract class StreamingBuilder implements DataSynchronizerFactory {
     protected static final Duration DEFAULT_FIRST_RETRY_DURATION = Duration.ofSeconds(1);
-    protected Duration firstRetryDelay;
+    private static final Duration MAX_RETRY_DURATION = Duration.ofSeconds(60);
+    protected Duration firstRetryDelay = DEFAULT_FIRST_RETRY_DURATION;
     protected Integer maxRetryTimes = 0;
 
     /**
@@ -34,8 +38,8 @@ public abstract class StreamingBuilder implements DataSynchronizerFactory {
      * @return the builder
      */
     public StreamingBuilder firstRetryDelay(Duration duration) {
-        this.firstRetryDelay =
-                (duration == null || duration.minusSeconds(1).isNegative()) ? DEFAULT_FIRST_RETRY_DURATION : duration;
+        this.firstRetryDelay = (duration == null || duration.minusSeconds(1).isNegative() || MAX_RETRY_DURATION.minus(duration).isNegative())
+                        ? DEFAULT_FIRST_RETRY_DURATION : duration;
         return this;
     }
 
@@ -45,8 +49,8 @@ public abstract class StreamingBuilder implements DataSynchronizerFactory {
      * @param maxRetryTimes an int value if less than or equals to 0, use the default
      * @return the builder
      */
-    public StreamingBuilder maxRetryTimes(Integer maxRetryTimes) {
-        this.maxRetryTimes = maxRetryTimes;
+    public StreamingBuilder maxRetryTimes(int maxRetryTimes) {
+        this.maxRetryTimes = (maxRetryTimes <= 0) ? Integer.MAX_VALUE : maxRetryTimes;
         return this;
     }
 }

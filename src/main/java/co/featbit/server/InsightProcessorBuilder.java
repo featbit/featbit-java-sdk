@@ -34,28 +34,52 @@ public abstract class InsightProcessorBuilder implements InsightEventSenderFacto
     protected final static int DEFAULT_RETRY_TIMES = 1;
     protected final static long DEFAULT_FLUSH_INTERVAL = Duration.ofSeconds(1).toMillis();
 
-    protected int capacity;
-    protected long retryIntervalInMilliseconds;
-    protected int maxRetryTimes;
-    protected long flushInterval;
+    protected int capacity = DEFAULT_CAPACITY;
+    protected long retryIntervalInMilliseconds = DEFAULT_RETRY_DELAY;
+    protected int maxRetryTimes = DEFAULT_RETRY_TIMES;
+    protected long flushIntervalInMilliseconds = DEFAULT_FLUSH_INTERVAL;
 
+    /**
+     * the capacity of message inbox which stores temporarily insight messages, default value is 10000
+     *
+     * @param capacityOfInbox
+     * @return InsightProcessorBuilder
+     */
     public InsightProcessorBuilder capacity(int capacityOfInbox) {
-        this.capacity = capacityOfInbox;
+        this.capacity = (capacityOfInbox < 0) ? DEFAULT_CAPACITY : capacityOfInbox;
         return this;
     }
 
-    public InsightProcessorBuilder flushInterval(int flushIntervalInSecond) {
-        this.flushInterval = (flushIntervalInSecond < 0) ? DEFAULT_FLUSH_INTERVAL : Duration.ofSeconds(flushIntervalInSecond).toMillis();
+    /**
+     * the interval to flush automatically insight messages, the default value is 1 seconds
+     *
+     * @param flushIntervalInMilliseconds
+     * @return
+     */
+    public InsightProcessorBuilder flushInterval(long flushIntervalInMilliseconds) {
+        this.flushIntervalInMilliseconds = (flushIntervalInMilliseconds < 0) ? DEFAULT_FLUSH_INTERVAL : flushIntervalInMilliseconds;
         return this;
     }
 
+    /**
+     * retry interval for sending failure, the default value is 0.1 seconds
+     *
+     * @param retryIntervalInMilliseconds
+     * @return
+     */
     public InsightProcessorBuilder retryInterval(long retryIntervalInMilliseconds) {
-        this.retryIntervalInMilliseconds = retryIntervalInMilliseconds;
+        this.retryIntervalInMilliseconds = (retryIntervalInMilliseconds < 0) ? DEFAULT_RETRY_DELAY : retryIntervalInMilliseconds;
         return this;
     }
 
+    /**
+     * max number of retries for sending failure, default value is 1 time
+     *
+     * @param maxRetryTimes
+     * @return
+     */
     public InsightProcessorBuilder maxRetryTimes(int maxRetryTimes) {
-        this.maxRetryTimes = maxRetryTimes;
+        this.maxRetryTimes = (maxRetryTimes < 0) ? DEFAULT_RETRY_TIMES : maxRetryTimes;
         return this;
     }
 

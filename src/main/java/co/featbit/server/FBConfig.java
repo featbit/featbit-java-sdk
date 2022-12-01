@@ -70,7 +70,7 @@ public class FBConfig {
         this.eventURL = builder.eventURL;
         this.startWaitTime = builder.startWaitTime == null ? DEFAULT_START_WAIT_TIME : builder.startWaitTime;
         if (builder.offline) {
-            Loggers.CLIENT.info("FFC JAVA SDK: SDK is in offline mode");
+            Loggers.CLIENT.info("FB JAVA SDK: SDK is in offline mode");
             this.dataSynchronizerFactory = Factory.externalDataSynchronization();
             this.insightProcessorFactory = Factory.externalEventTrack();
         } else {

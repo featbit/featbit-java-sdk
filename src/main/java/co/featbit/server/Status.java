@@ -23,8 +23,6 @@ public abstract class Status {
     public static final String UNKNOWN_CLOSE_CODE = "Unknown close code";
     public static final String WEBSOCKET_ERROR = "WebSocket error";
 
-    public static final String DATA_SYNC_ERROR = "Data Sync error";
-
     /**
      * possible values for {@link DataSynchronizer}
      */
@@ -274,7 +272,7 @@ public abstract class Status {
         }
 
         private void handleErrorFromStorage(Exception ex, ErrorTrack errorTrack) {
-            Loggers.DATA_STORAGE.error("FFC JAVA SDK: Data Storage error: {}, UpdateProcessor will attempt to receive the data", ex.getMessage());
+            Loggers.DATA_STORAGE.error("FB JAVA SDK: Data Storage error: {}, UpdateProcessor will attempt to receive the data", ex.getMessage());
             updateStatus(State.interruptedState(errorTrack));
         }
 
@@ -308,21 +306,16 @@ public abstract class Status {
                 StateType oldStateType = currentState.getStateType();
                 StateType newStateType = newState.getStateType();
                 ErrorTrack error = newState.getErrorTrack();
-                Instant stateSince;
                 // interrupted state is only meaningful after initialization
                 if (newStateType == StateType.INTERRUPTED && oldStateType == StateType.INITIALIZING) {
                     newStateType = StateType.INITIALIZING;
                 }
 
-                if (newStateType != oldStateType) {
-                    stateSince = Instant.now();
-                } else if (error != null) {
-                    stateSince = currentState.getStateSince();
-                } else {
-                    return;
+                if (newStateType != oldStateType || error != null) {
+                    Instant stateSince = (newStateType != oldStateType) ? Instant.now() : currentState.getStateSince();
+                    currentState = new State(newStateType, stateSince, error);
+                    lockObject.notifyAll();
                 }
-                currentState = new State(newStateType, stateSince, error);
-                lockObject.notifyAll();
             }
 
         }

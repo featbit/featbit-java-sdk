@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static co.featbit.server.Status.DATA_SYNC_ERROR;
 import static co.featbit.server.Status.REQUEST_INVALID_ERROR;
 import static co.featbit.server.Status.UNKNOWN_CLOSE_CODE;
 import static co.featbit.server.Streaming.StreamingOps.isReconnOnClose;
@@ -110,7 +109,7 @@ final class Streaming implements DataSynchronizer {
 
     @Override
     public void close() {
-        logger.info("FFC JAVA SDK: streaming is stopping...");
+        logger.info("FB JAVA SDK: streaming is stopping...");
         if (webSocket != null) {
             forceToCloseWS.compareAndSet(false, true);
             webSocket.close(NORMAL_CLOSE, NORMAL_CLOSE_REASON);
@@ -138,12 +137,12 @@ final class Streaming implements DataSynchronizer {
 
     private void connect() {
         if (isWSConnected.get() || forceToCloseWS.get()) {
-            logger.error("FFC JAVA SDK: streaming websocket is already Connected or Closed");
+            logger.error("FB JAVA SDK: streaming websocket is already Connected or Closed");
             return;
         }
         int count = connCount.getAndIncrement();
         if (count >= maxRetryTimes) {
-            logger.error("FFC JAVA SDK: streaming websocket have reached max retry");
+            logger.error("FB JAVA SDK: streaming websocket have reached max retry");
             return;
         }
 
@@ -213,10 +212,9 @@ final class Streaming implements DataSynchronizer {
                 message = StringUtils.isEmpty(reason) ? "unexpected close" : reason;
             }
             logger.debug("Streaming WebSocket close reason: {}", message);
-            if (isReconn) {
+            if (isReconn && code != GOING_AWAY_CLOSE) {
                 // if code is not 1001, it's an unknown close code received by server
-                String errorType = (code == GOING_AWAY_CLOSE) ? DATA_SYNC_ERROR : UNKNOWN_CLOSE_CODE;
-                updater.updateStatus(Status.State.interruptedState(errorType, message));
+                updater.updateStatus(Status.State.interruptedState(UNKNOWN_CLOSE_CODE, message));
             } else if (code == INVALID_REQUEST_CLOSE) {
                 // authorization error
                 updater.updateStatus(Status.State.errorOFFState(REQUEST_INVALID_ERROR, message));
@@ -247,10 +245,10 @@ final class Streaming implements DataSynchronizer {
                 }
             }
             if (isReconn) {
-                logger.warn("FFC JAVA SDK: streaming webSocket will reconnect because of {}", t.getMessage());
+                logger.warn("FB JAVA SDK: streaming webSocket will reconnect because of {}", t.getMessage());
                 updater.updateStatus(Status.State.interruptedState(errorType, message));
             } else {
-                logger.error("FFC JAVA SDK: streaming webSocket Failure", t);
+                logger.error("FB JAVA SDK: streaming webSocket Failure", t);
                 updater.updateStatus(Status.State.errorOFFState(errorType, message));
             }
             return isReconn;

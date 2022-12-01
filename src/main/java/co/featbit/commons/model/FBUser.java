@@ -24,7 +24,7 @@ public final class FBUser implements Serializable {
 
     private final static Function<FBUser, String> USERNAME = u -> u.userName;
     private final static Function<FBUser, String> KEY = u -> u.key;
-    private final static Map<String, Function<FBUser, String>> BUILTINS = ImmutableMap.of("name", USERNAME, "keyid", KEY);
+    private final static Map<String, Function<FBUser, String>> BUILTINS = ImmutableMap.of("name", USERNAME, "keyid", KEY, "key", KEY);
     private final String userName;
     private final String key;
     private final Map<String, String> custom;

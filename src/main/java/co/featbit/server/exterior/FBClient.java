@@ -145,6 +145,7 @@ public interface FBClient extends Closeable {
     /**
      * Calculates the value of a feature flag for a given user, and returns an object that describes the
      * way the value was determined.
+     * Note that this method does not cast the result of flag evaluation, any flag value is a string type
      * <p>
      *
      * @param featureFlagKey the unique key for the feature flag

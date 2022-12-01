@@ -27,10 +27,8 @@ public final class FlagState<T> extends BasicFlagState implements Serializable {
      * @param <T>  String/Boolean/Numeric Type
      * @return a FlagState
      */
-    public static <T> FlagState<T> of(EvalDetail<T> data) {
-        return new FlagState<>(data.isSuccess(),
-                data.isSuccess() ? "OK" : data.getReason(),
-                data);
+    public static <T> FlagState<T> of(EvalDetail<T> data, boolean success) {
+        return new FlagState<>(success, success ? "OK" : data.getReason(), data);
     }
 
     /**

@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static co.featbit.server.Status.DATA_INVALID_ERROR;
+import static co.featbit.server.Status.DATA_STORAGE_INIT_ERROR;
 import static co.featbit.server.Status.NETWORK_ERROR;
 import static co.featbit.server.Status.RUNTIME_ERROR;
 import static co.featbit.server.Status.StateType.INITIALIZING;
@@ -103,6 +104,7 @@ class StreamingOpsTest extends ComponentBaseTest {
         assertFalse(initialized.get());
         assertFalse(dataUpdaterImpl.storageInitialized());
         assertEquals(INITIALIZING, dataUpdaterImpl.getCurrentState().getStateType());
+        assertEquals(DATA_STORAGE_INIT_ERROR, dataUpdaterImpl.getCurrentState().getErrorTrack().getErrorType());
         support.verifyAll();
     }
 
@@ -144,18 +146,7 @@ class StreamingOpsTest extends ComponentBaseTest {
     void testStreamingOnDataSyncError() {
         int code = 1001;
         String reason = "data sync error";
-        final List<Object> arguments = new ArrayList<>();
-        dataUpdaterMock.updateStatus(anyObject(Status.State.class));
-        expectLastCall().andAnswer(() -> {
-            arguments.addAll(Arrays.asList(getCurrentArguments()));
-            return null;
-        });
-        support.replayAll();
         assertTrue(isReconnOnClose(dataUpdaterMock, code, reason));
-        Status.State state = (Status.State) (arguments.get(0));
-        assertEquals(INTERRUPTED, state.getStateType());
-        assertEquals(reason, state.getErrorTrack().getMessage());
-        support.verifyAll();
     }
 
     @Test
