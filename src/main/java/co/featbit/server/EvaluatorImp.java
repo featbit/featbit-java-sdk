@@ -4,7 +4,6 @@ import co.featbit.commons.json.JsonHelper;
 import co.featbit.commons.model.FBUser;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -51,7 +50,7 @@ final class EvaluatorImp extends Evaluator {
             return er;
         } finally {
             if (er != null) {
-                logger.info("FFC JAVA SDK: User {}, Feature Flag {}, Flag Value {}", user.getKey(), flag.getKey(), er.getValue());
+                logger.info("FB JAVA SDK: User {}, Feature Flag {}, Flag Value {}", user.getKey(), flag.getKey(), er.getValue());
                 if (event != null) {
                     event.add(InsightTypes.FlagEventVariation.of(flag.getKey(), er));
                 }
@@ -124,7 +123,7 @@ final class EvaluatorImp extends Evaluator {
         } else if (op.equals(IS_TRUE_CLAUSE)) {
             return trueClause(user, condition);
         } else if (op.equals(IS_FALSE_CLAUSE)) {
-            return !trueClause(user, condition);
+            return falseClause(user, condition);
         } else if (op.equals(MATCH_REGEX_CLAUSE)) {
             return matchRegExClause(user, condition);
         } else if (op.equals(NOT_MATCH_REGEX_CLAUSE)) {
@@ -162,13 +161,18 @@ final class EvaluatorImp extends Evaluator {
 
     private boolean trueClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
-        return pv != null && BooleanUtils.toBoolean(pv);
+        return pv != null && pv.toLowerCase().equals("true");
+    }
+
+    private boolean falseClause(FBUser user, DataModel.Condition condition) {
+        String pv = user.getProperty(condition.getProperty());
+        return pv != null && pv.toLowerCase().equals("false");
     }
 
     private boolean matchRegExClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
-        return pv != null && Pattern.compile(condValue).matcher(pv).matches();
+        return pv != null && condValue != null && Pattern.compile(condValue).matcher(pv).matches();
     }
 
     private boolean endsWithClause(FBUser user, DataModel.Condition condition) {
@@ -208,7 +212,7 @@ final class EvaluatorImp extends Evaluator {
     private boolean equalsClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         String condValue = condition.getValue();
-        return condValue.equals(pv);
+        return condValue != null && condValue.equals(pv);
     }
 
     private boolean containsClause(FBUser user, DataModel.Condition condition) {

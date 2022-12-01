@@ -138,24 +138,26 @@ public final class FBClientImp implements FBClient {
         if (!startWait.isZero() && !startWait.isNegative()) {
             try {
                 if (!(config.getDataSynchronizerFactory() instanceof FactoryImp.NullDataSynchronizerFactory)) {
-                    logger.info("FFC JAVA SDK: waiting for Client initialization in {} milliseconds", startWait.toMillis());
+                    logger.info("FB JAVA SDK: waiting for Client initialization in {} milliseconds", startWait.toMillis());
                 }
                 if (config.getDataStorageFactory() instanceof FactoryImp.NullDataStorageFactory) {
-                    logger.info("FFC JAVA SDK: SDK just returns default variation");
+                    logger.info("FB JAVA SDK: SDK just returns default variation");
                 }
                 boolean initResult = initFuture.get(startWait.toMillis(), TimeUnit.MILLISECONDS);
                 if (initResult && !offline) {
-                    logger.info("FFC JAVA SDK: the initialization completed");
+                    logger.info("FB JAVA SDK: SDK initialization is completed");
                 }
             } catch (TimeoutException e) {
-                logger.error("FFC JAVA SDK: timeout encountered when waiting for data update");
+                logger.error("FB JAVA SDK: timeout encountered when waiting for data update");
             } catch (Exception e) {
-                logger.error("FFC JAVA SDK: exception encountered when waiting for data update", e);
+                logger.error("FB JAVA SDK: exception encountered when waiting for data update", e);
             }
 
             if (!this.dataSynchronizer.isInitialized() && !offline) {
-                logger.info("FFC JAVA SDK: SDK was not successfully initialized");
+                logger.warn("FB JAVA SDK: SDK was not successfully initialized");
             }
+        } else {
+            logger.info("FB JAVA SDK: SDK starts in asynchronous mode");
         }
     }
 
@@ -173,7 +175,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public FlagState<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue) {
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, null);
-        return EvalDetail.of(res.getValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(res.getValue());
     }
 
     @Override
@@ -192,7 +194,7 @@ public final class FBClientImp implements FBClient {
     public FlagState<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
-        return EvalDetail.of(BooleanUtils.toBoolean(res.getValue()), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(BooleanUtils.toBoolean(res.getValue()));
     }
 
     public double doubleVariation(String featureFlagKey, FBUser user, Double defaultValue) {
@@ -206,7 +208,7 @@ public final class FBClientImp implements FBClient {
     public FlagState<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
-        return EvalDetail.of(Double.parseDouble(res.getValue()), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(Double.parseDouble(res.getValue()));
     }
 
     public int intVariation(String featureFlagKey, FBUser user, Integer defaultValue) {
@@ -219,7 +221,7 @@ public final class FBClientImp implements FBClient {
     public FlagState<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
-        return EvalDetail.of(Double.valueOf(res.getValue()).intValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(Double.valueOf(res.getValue()).intValue());
     }
 
     public long longVariation(String featureFlagKey, FBUser user, Long defaultValue) {
@@ -232,7 +234,7 @@ public final class FBClientImp implements FBClient {
     public FlagState<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
-        return EvalDetail.of(Double.valueOf(res.getValue()).longValue(), res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(Double.valueOf(res.getValue()).longValue());
     }
 
     @Override
@@ -242,7 +244,7 @@ public final class FBClientImp implements FBClient {
         try {
             return JsonHelper.deserialize(json, clazz);
         } catch (JsonParseException ex) {
-            logger.error("FFC JAVA SDK: json value can't be parsed", ex);
+            logger.error("FB JAVA SDK: json value can't be parsed", ex);
             return defaultValue;
         }
 
@@ -258,43 +260,43 @@ public final class FBClientImp implements FBClient {
             try {
                 value = JsonHelper.deserialize(res.getValue(), clazz);
             } catch (JsonParseException ex) {
-                logger.error("FFC JAVA SDK: unexpected error in evaluation", ex);
+                logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
                 value = defaultValue;
             }
         }
-        return EvalDetail.of(value, res.getIndex(), res.getReason(), featureFlagKey, featureFlagKey).toFlagState();
+        return res.toFlagState(value);
     }
 
     private Evaluator.EvalResult evaluateInternal(String featureFlagKey, FBUser user, Object defaultValue, Class<?> requiredType) {
         try {
             if (!isInitialized()) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: evaluation is called before Java SDK client is initialized for feature flag, well using the default value");
+                Loggers.EVALUATION.warn("FB JAVA SDK: evaluation is called before Java SDK client is initialized for feature flag, well using the default value");
                 return Evaluator.EvalResult.error(defaultValue.toString(), REASON_CLIENT_NOT_READY, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             if (StringUtils.isBlank(featureFlagKey)) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: null feature flag key; returning default value");
+                Loggers.EVALUATION.warn("FB JAVA SDK: null feature flag key; returning default value");
                 return Evaluator.EvalResult.error(defaultValue.toString(), REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             DataModel.FeatureFlag flag = getFlagInternal(featureFlagKey);
             if (flag == null) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: unknown feature flag {}; returning default value", featureFlagKey);
+                Loggers.EVALUATION.warn("FB JAVA SDK: unknown feature flag {}; returning default value", featureFlagKey);
                 return Evaluator.EvalResult.error(defaultValue.toString(), REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             if (user == null || StringUtils.isBlank(user.getKey())) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: null user for feature flag {}, returning default value", featureFlagKey);
+                Loggers.EVALUATION.warn("FB JAVA SDK: null user for feature flag {}, returning default value", featureFlagKey);
                 return Evaluator.EvalResult.error(defaultValue.toString(), REASON_USER_NOT_SPECIFIED, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
 
             InsightTypes.Event event = InsightTypes.FlagEvent.of(user);
             Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
             if (requiredType != null && !Utils.checkType(flag.getVariationType(), requiredType, res.getValue())) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: evaluation result {} didn't matched expected type {}", res.getValue(), requiredType);
+                Loggers.EVALUATION.warn("FB JAVA SDK: evaluation result {} didn't matched expected type {}", res.getValue(), requiredType);
                 return Evaluator.EvalResult.error(defaultValue.toString(), REASON_WRONG_TYPE, res.getKeyName(), res.getName());
             }
             eventHandler.accept(event);
             return res;
         } catch (Exception ex) {
-            logger.error("FFC JAVA SDK: unexpected error in evaluation", ex);
+            logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
             return Evaluator.EvalResult.error(defaultValue.toString(), REASON_ERROR, featureFlagKey, FLAG_NAME_UNKNOWN);
         }
 
@@ -308,12 +310,12 @@ public final class FBClientImp implements FBClient {
     public boolean isFlagKnown(String featureKey) {
         try {
             if (!isInitialized()) {
-                logger.warn("FFC JAVA SDK: isFlagKnown is called before Java SDK client is initialized for feature flag");
+                logger.warn("FB JAVA SDK: isFlagKnown is called before Java SDK client is initialized for feature flag");
                 return false;
             }
             return getFlagInternal(featureKey) != null;
         } catch (Exception ex) {
-            logger.error("FFC JAVA SDK: unexpected error in isFlagKnown", ex);
+            logger.error("FB JAVA SDK: unexpected error in isFlagKnown", ex);
         }
         return false;
 
@@ -321,7 +323,7 @@ public final class FBClientImp implements FBClient {
 
 
     public void close() throws IOException {
-        logger.info("FFC JAVA SDK: Java SDK client is closing...");
+        logger.info("FB JAVA SDK: Java SDK client is closing...");
         this.storage.close();
         this.dataSynchronizer.close();
         this.insightProcessor.close();
@@ -358,18 +360,18 @@ public final class FBClientImp implements FBClient {
     public AllFlagStates<String> getAllLatestFlagsVariations(FBUser user) {
         ImmutableMap.Builder<EvalDetail<String>, InsightTypes.Event> builder = ImmutableMap.builder();
         boolean success = true;
-        String errorString = null;
+        String errorString = "";
         EvalDetail<String> ed;
         try {
             if (!isInitialized()) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: Evaluation is called before Java SDK client is initialized for feature flag");
-                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, NO_EVAL_RES, REASON_CLIENT_NOT_READY, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
+                Loggers.EVALUATION.warn("FB JAVA SDK: Evaluation is called before Java SDK client is initialized for feature flag");
+                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_CLIENT_NOT_READY, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
                 builder.put(ed, InsightTypes.NullEvent.INSTANCE);
                 success = false;
                 errorString = REASON_CLIENT_NOT_READY;
             } else if (user == null || StringUtils.isBlank(user.getKey())) {
-                Loggers.EVALUATION.warn("FFC JAVA SDK: null user or feature flag");
-                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, NO_EVAL_RES, REASON_USER_NOT_SPECIFIED, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
+                Loggers.EVALUATION.warn("FB JAVA SDK: null user or feature flag");
+                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_USER_NOT_SPECIFIED, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
                 builder.put(ed, InsightTypes.NullEvent.INSTANCE);
                 success = false;
                 errorString = REASON_USER_NOT_SPECIFIED;
@@ -379,13 +381,13 @@ public final class FBClientImp implements FBClient {
                     InsightTypes.Event event = InsightTypes.FlagEvent.of(user);
                     DataModel.FeatureFlag flag = (DataModel.FeatureFlag) item;
                     Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
-                    ed = EvalDetail.of(res.getValue(), res.getIndex(), res.getReason(), res.getKeyName(), res.getName());
+                    ed = res.toEvalDetail(res.getValue());
                     builder.put(ed, event);
                 }
             }
         } catch (Exception ex) {
-            logger.error("FFC JAVA SDK: unexpected error in evaluation", ex);
-            ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, NO_EVAL_RES, REASON_ERROR, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
+            logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
+            ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_ERROR, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
             builder.put(ed, InsightTypes.NullEvent.INSTANCE);
             success = false;
             errorString = REASON_ERROR;
@@ -401,7 +403,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public void identify(FBUser user) {
         if (user == null) {
-            Loggers.CLIENT.warn("FFC JAVA SDK: user invalid");
+            Loggers.CLIENT.warn("FB JAVA SDK: user invalid");
             return;
         }
         InsightTypes.Event event = InsightTypes.UserEvent.of(user);
@@ -416,7 +418,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public void trackMetric(FBUser user, String eventName, double metricValue) {
         if (user == null || StringUtils.isBlank(eventName) || metricValue <= 0) {
-            Loggers.CLIENT.warn("FFC JAVA SDK: event/user/metric invalid");
+            Loggers.CLIENT.warn("FB JAVA SDK: event/user/metric invalid");
             return;
         }
         InsightTypes.Event event = InsightTypes.MetricEvent.of(user).add(InsightTypes.Metric.of(eventName, metricValue));
@@ -426,7 +428,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public void trackMetrics(FBUser user, String... eventNames) {
         if (user == null || eventNames == null || eventNames.length == 0) {
-            Loggers.CLIENT.warn("FFC JAVA SDK: user/events invalid");
+            Loggers.CLIENT.warn("FB JAVA SDK: user/events invalid");
             return;
         }
         InsightTypes.Event event = InsightTypes.MetricEvent.of(user);
@@ -441,7 +443,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public void trackMetrics(FBUser user, Map<String, Double> metrics) {
         if (user == null || metrics == null || metrics.isEmpty()) {
-            Loggers.CLIENT.warn("FFC JAVA SDK: user/metrics invalid");
+            Loggers.CLIENT.warn("FB JAVA SDK: user/metrics invalid");
             return;
         }
         InsightTypes.Event event = InsightTypes.MetricEvent.of(user);
