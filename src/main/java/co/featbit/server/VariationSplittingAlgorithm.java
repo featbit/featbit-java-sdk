@@ -21,7 +21,7 @@ final class VariationSplittingAlgorithm {
     static double percentageOfKey(String key) {
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(key.getBytes(StandardCharsets.US_ASCII));
+            md5.update(key.getBytes(StandardCharsets.UTF_8));
             byte[] digest = md5.digest();
             int magicNumber = Utils.intLEFromBytes(digest);
             return Math.abs((double) magicNumber / Integer.MIN_VALUE);

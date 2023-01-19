@@ -4,7 +4,7 @@ import co.featbit.commons.json.JsonHelper;
 import co.featbit.commons.json.JsonParseException;
 import co.featbit.server.exterior.BasicConfig;
 import co.featbit.server.exterior.Context;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.HttpConfig;
 import com.google.common.collect.ImmutableList;
@@ -179,7 +179,7 @@ final class Streaming implements DataSynchronizer {
         static Boolean processData(Status.DataUpdater updater, DataModel.Data data, AtomicBoolean initialized, CompletableFuture<Boolean> initFuture) {
             boolean opOK = false;
             String eventType = data.getEventType();
-            Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> updatedData = data.toStorageType();
+            Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> updatedData = data.toStorageType();
             if (FULL_OPS.equalsIgnoreCase(eventType)) {
                 opOK = updater.init(updatedData, data.getTimestamp());
             } else if (PATCH_OPS.equalsIgnoreCase(eventType)) {

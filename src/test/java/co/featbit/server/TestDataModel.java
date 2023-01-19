@@ -1,6 +1,6 @@
 package co.featbit.server;
 
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import com.google.common.base.MoreObjects;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 abstract class TestDataModel {
-    static class TestItem implements DataStoreTypes.Item, Serializable {
+    static class TestItem implements DataStorageTypes.Item, Serializable {
         private String id = UUID.randomUUID().toString();
 
         private final boolean isArchived;
@@ -47,7 +47,7 @@ abstract class TestDataModel {
 
         @Override
         public Integer getType() {
-            return FFC_TEST_ITEM;
+            return FB_TEST_ITEM;
         }
 
         @Override
@@ -69,7 +69,7 @@ abstract class TestDataModel {
         }
 
         @Override
-        public int compareTo(@NotNull DataStoreTypes.Item o) {
+        public int compareTo(@NotNull DataStorageTypes.Item o) {
             return (int) (timestamp - o.getTimestamp());
         }
     }

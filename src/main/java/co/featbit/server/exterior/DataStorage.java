@@ -16,10 +16,10 @@ public interface DataStorage extends Closeable {
      * Overwrites the storage with a set of items for each collection, if the new version > the old one
      * <p>
      *
-     * @param allData map of {@link co.featbit.server.exterior.DataStoreTypes.Category} and their data set {@link co.featbit.server.exterior.DataStoreTypes.Item}
+     * @param allData map of {@link DataStorageTypes.Category} and their data set {@link DataStorageTypes.Item}
      * @param version the version of dataset, Ordinarily it's a timestamp.
      */
-    void init(Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData, Long version);
+    void init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version);
 
     /**
      * Retrieves an item from the specified collection, if available.
@@ -30,7 +30,7 @@ public interface DataStorage extends Closeable {
      * @param key      the unique key of the item in the collection
      * @return a versioned item that contains the stored data or null if item is deleted or unknown
      */
-    DataStoreTypes.Item get(DataStoreTypes.Category category, String key);
+    DataStorageTypes.Item get(DataStorageTypes.Category category, String key);
 
     /**
      * Retrieves all items from the specified collection.
@@ -40,14 +40,14 @@ public interface DataStorage extends Closeable {
      * @param category specifies which collection to use
      * @return a map of ids and their versioned items
      */
-    Map<String, DataStoreTypes.Item> getAll(DataStoreTypes.Category category);
+    Map<String, DataStorageTypes.Item> getAll(DataStorageTypes.Category category);
 
     /**
      * Updates or inserts an item in the specified collection. For updates, the object will only be
      * updated if the existing version is less than the new version; for inserts, if the version > the existing one, it will replace
      * the existing one.
      * <p>
-     * The SDK may pass an {@link co.featbit.server.exterior.DataStoreTypes.Item} that contains an archived object,
+     * The SDK may pass an {@link DataStorageTypes.Item} that contains an archived object,
      * In that case, assuming the version is greater than any existing version of that item, the store should retain
      * a placeholder rather than simply not storing anything.
      *
@@ -57,9 +57,9 @@ public interface DataStorage extends Closeable {
      * @param version  the version of item
      * @return true if success
      */
-    boolean upsert(DataStoreTypes.Category category,
+    boolean upsert(DataStorageTypes.Category category,
                    String key,
-                   DataStoreTypes.Item item,
+                   DataStorageTypes.Item item,
                    Long version);
 
     /**

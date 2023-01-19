@@ -1,7 +1,7 @@
 package co.featbit.server;
 
 import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import com.google.common.base.MoreObjects;
 
@@ -190,11 +190,11 @@ public abstract class Status {
          * and set the data source state to {@link StateType#INTERRUPTED}.It will not rethrow the error to other level
          * but will simply return {@code false} to indicate that the operation failed.
          *
-         * @param allData map of {@link DataStoreTypes.Category} and their data set {@link DataStoreTypes.Item}
+         * @param allData map of {@link DataStorageTypes.Category} and their data set {@link DataStorageTypes.Item}
          * @param version the version of dataset, Ordinarily it's a timestamp.
          * @return true if the update succeeded
          */
-        boolean init(Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData, Long version);
+        boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version);
 
         /**
          * Updates or inserts an item in the specified collection. For updates, the object will only be
@@ -211,7 +211,7 @@ public abstract class Status {
          * @param version  the version of item
          * @return true if success
          */
-        boolean upsert(DataStoreTypes.Category category, String key, DataStoreTypes.Item item, Long version);
+        boolean upsert(DataStorageTypes.Category category, String key, DataStorageTypes.Item item, Long version);
 
         /**
          * Informs the SDK of a change in the {@link DataSynchronizer} status.
@@ -277,7 +277,7 @@ public abstract class Status {
         }
 
         @Override
-        public boolean init(Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData, Long version) {
+        public boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
             try {
                 storage.init(allData, version);
             } catch (Exception ex) {
@@ -288,7 +288,7 @@ public abstract class Status {
         }
 
         @Override
-        public boolean upsert(DataStoreTypes.Category category, String key, DataStoreTypes.Item item, Long version) {
+        public boolean upsert(DataStorageTypes.Category category, String key, DataStorageTypes.Item item, Long version) {
             try {
                 return storage.upsert(category, key, item, version);
             } catch (Exception ex) {

@@ -15,7 +15,7 @@ import java.util.Objects;
  * This class provide a high-level description of storage objects so that custom integration code or test code can
  * store or serialize them.
  */
-public abstract class DataStoreTypes {
+public abstract class DataStorageTypes {
 
     /**
      * The {@link Category} instance that describes feature flag data.
@@ -27,7 +27,7 @@ public abstract class DataStoreTypes {
 
     public final static Category SEGMENTS = new Category("segments", "seg");
 
-    public final static Category DATATEST = new Category("datatests", "test");
+    public final static Category DATATESTS = new Category("datatests", "test");
 
     /**
      * An enumeration of all supported {@link Category} types.
@@ -35,9 +35,9 @@ public abstract class DataStoreTypes {
      * Applications should not need to reference this object directly. It is public so that custom data storage
      * implementations can determine what kinds of model objects may need to be stored.
      */
-    public final List<Category> ALL_CATS = ImmutableList.of(FEATURES, SEGMENTS, DATATEST);
+    public final List<Category> ALL_CATS = ImmutableList.of(FEATURES, SEGMENTS, DATATESTS);
 
-    private DataStoreTypes() {
+    private DataStorageTypes() {
     }
 
     /**
@@ -95,9 +95,9 @@ public abstract class DataStoreTypes {
     public interface Item extends Comparable<Item> {
         Integer FB_FEATURE_FLAG = 100;
         Integer FB_ARCHIVED_ITEM = 200;
-        Integer FFC_SEGMENT = 300;
+        Integer FB_SEGMENT = 300;
 
-        Integer FFC_TEST_ITEM = 400;
+        Integer FB_TEST_ITEM = 400;
 
         /**
          * return the unique id
