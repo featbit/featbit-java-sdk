@@ -71,9 +71,7 @@ class FBClientTest extends FBClientBaseTest {
         cnPhoneNumber = new FBUser.Builder("18555358000").userName("test-user-5").build();
         frPhoneNumber = new FBUser.Builder("0603111111").userName("test-user-6").build();
         email = new FBUser.Builder("test-user-7@featbit.com").userName("test-user-7").build();
-        fakeConfigBuilder = new FBConfig.Builder()
-                .streamingURL(fakeUrl)
-                .eventURL(fakeUrl);
+        fakeConfigBuilder = new FBConfig.Builder().streamingURL(fakeUrl).eventURL(fakeUrl);
         initFuture = support.createNiceMock(Future.class);
         dataSynchronizer = support.createNiceMock(DataSynchronizer.class);
         insightProcessor = support.createNiceMock(InsightProcessor.class);
@@ -81,9 +79,7 @@ class FBClientTest extends FBClientBaseTest {
     }
 
     private FBClient createMockClient(FBConfig.Builder config) {
-        config.dataSynchronizerFactory(mockDataSynchronizerFactory(dataSynchronizer))
-                .insightProcessorFactory(mockInsightProcessorFactory(insightProcessor))
-                .dataStorageFactory(mockDataStorageFactory(dataStorage));
+        config.dataSynchronizerFactory(mockDataSynchronizerFactory(dataSynchronizer)).insightProcessorFactory(mockInsightProcessorFactory(insightProcessor)).dataStorageFactory(mockDataStorageFactory(dataStorage));
         return new FBClientImp(fakeEnvSecret, config.build());
     }
 
@@ -187,7 +183,11 @@ class FBClientTest extends FBClientBaseTest {
             assertEquals(true, ed1.getVariation());
             assertEquals(REASON_TARGET_MATCH, ed1.getReason());
             EvalDetail<Integer> ed2 = states.getIntegerDetail("ff-test-number", 0);
+            Long longValue = states.getLong("ff-test-number", 0L);
+            Double doubleValue = states.getDouble("ff-test-number", 0D);
             assertEquals(1, ed2.getVariation());
+            assertEquals(1L, longValue);
+            assertEquals(1D, doubleValue);
             assertEquals(REASON_RULE_MATCH, ed2.getReason());
             EvalDetail<String> ed3 = states.getStringDetail("ff-test-string", "");
             assertEquals("others", ed3.getVariation());
@@ -283,10 +283,7 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testConstructEmptyUrl() throws IOException {
-        FBConfig errorConfig = new FBConfig.Builder()
-                .streamingURL("")
-                .eventURL("")
-                .build();
+        FBConfig errorConfig = new FBConfig.Builder().streamingURL("").eventURL("").build();
         try (FBClient client = new FBClientImp(fakeEnvSecret, errorConfig)) {
             fail("illegal argument exception");
         } catch (IllegalArgumentException e) {
@@ -296,10 +293,7 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testConstructIllegalUrl() throws IOException {
-        FBConfig errorConfig = new FBConfig.Builder()
-                .streamingURL("urn:isbn:0-294-56559-3")
-                .eventURL("mailto:John.Doe@example.com")
-                .build();
+        FBConfig errorConfig = new FBConfig.Builder().streamingURL("urn:isbn:0-294-56559-3").eventURL("mailto:John.Doe@example.com").build();
         try (FBClient client = new FBClientImp(fakeEnvSecret, errorConfig)) {
             fail("illegal argument exception");
         } catch (IllegalArgumentException e) {

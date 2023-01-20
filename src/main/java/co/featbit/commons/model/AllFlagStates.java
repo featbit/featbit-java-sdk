@@ -86,7 +86,7 @@ public class AllFlagStates extends BasicFlagState implements Serializable {
                 } else if (clzz == Double.class) {
                     res = Double.parseDouble(variation);
                 } else {
-                    res = Double.parseDouble(variation);
+                    res = Long.parseLong(variation);
                 }
             }
         }
