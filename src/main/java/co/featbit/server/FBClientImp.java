@@ -7,7 +7,7 @@ import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.FlagState;
 import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.FBClient;
 import co.featbit.server.exterior.InsightProcessor;
@@ -28,7 +28,6 @@ import static co.featbit.server.Evaluator.DEFAULT_JSON_VALUE;
 import static co.featbit.server.Evaluator.FLAG_KEY_UNKNOWN;
 import static co.featbit.server.Evaluator.FLAG_NAME_UNKNOWN;
 import static co.featbit.server.Evaluator.FLAG_VALUE_UNKNOWN;
-import static co.featbit.server.Evaluator.NO_EVAL_RES;
 import static co.featbit.server.Evaluator.REASON_CLIENT_NOT_READY;
 import static co.featbit.server.Evaluator.REASON_ERROR;
 import static co.featbit.server.Evaluator.REASON_FLAG_NOT_FOUND;
@@ -116,11 +115,11 @@ public final class FBClientImp implements FBClient {
         this.storage = config.getDataStorageFactory().createDataStorage(context);
         //evaluator
         Evaluator.Getter<DataModel.FeatureFlag> flagGetter = key -> {
-            DataStoreTypes.Item item = this.storage.get(DataStoreTypes.FEATURES, key);
+            DataStorageTypes.Item item = this.storage.get(DataStorageTypes.FEATURES, key);
             return item == null ? null : (DataModel.FeatureFlag) item;
         };
         Evaluator.Getter<DataModel.Segment> segmentGetter = key -> {
-            DataStoreTypes.Item item = this.storage.get(DataStoreTypes.SEGMENTS, key);
+            DataStorageTypes.Item item = this.storage.get(DataStorageTypes.SEGMENTS, key);
             return item == null ? null : (DataModel.Segment) item;
         };
         this.evaluator = new EvaluatorImp(flagGetter, segmentGetter);
@@ -303,7 +302,7 @@ public final class FBClientImp implements FBClient {
     }
 
     private DataModel.FeatureFlag getFlagInternal(String featureFlagKey) {
-        DataStoreTypes.Item item = storage.get(DataStoreTypes.FEATURES, featureFlagKey);
+        DataStorageTypes.Item item = storage.get(DataStorageTypes.FEATURES, featureFlagKey);
         return item == null ? null : (DataModel.FeatureFlag) item;
     }
 
@@ -345,7 +344,7 @@ public final class FBClientImp implements FBClient {
             if (all.isProcessData()) {
                 DataModel.Data allData = all.data();
                 Long version = allData.getTimestamp();
-                Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allDataInStorageType = allData.toStorageType();
+                Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allDataInStorageType = allData.toStorageType();
                 boolean res = dataUpdater.init(allDataInStorageType, version);
                 if (res) {
                     dataUpdater.updateStatus(Status.State.OKState());
@@ -357,7 +356,7 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
-    public AllFlagStates<String> getAllLatestFlagsVariations(FBUser user) {
+    public AllFlagStates getAllLatestFlagsVariations(FBUser user) {
         ImmutableMap.Builder<EvalDetail<String>, InsightTypes.Event> builder = ImmutableMap.builder();
         boolean success = true;
         String errorString = "";
@@ -376,8 +375,8 @@ public final class FBClientImp implements FBClient {
                 success = false;
                 errorString = REASON_USER_NOT_SPECIFIED;
             } else {
-                Map<String, DataStoreTypes.Item> allFlags = this.storage.getAll(DataStoreTypes.FEATURES);
-                for (DataStoreTypes.Item item : allFlags.values()) {
+                Map<String, DataStorageTypes.Item> allFlags = this.storage.getAll(DataStorageTypes.FEATURES);
+                for (DataStorageTypes.Item item : allFlags.values()) {
                     InsightTypes.Event event = InsightTypes.FlagEvent.of(user);
                     DataModel.FeatureFlag flag = (DataModel.FeatureFlag) item;
                     Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
@@ -392,7 +391,7 @@ public final class FBClientImp implements FBClient {
             success = false;
             errorString = REASON_ERROR;
         }
-        return new Implicits.ComplexAllFlagStates<>(success, errorString, builder.build(), eventHandler);
+        return new Implicits.ComplexAllFlagStates(success, errorString, builder.build(), eventHandler);
     }
 
     @Override

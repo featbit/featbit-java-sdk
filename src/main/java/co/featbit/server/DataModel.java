@@ -1,7 +1,7 @@
 package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
@@ -19,9 +19,9 @@ public abstract class DataModel {
     }
 
     /**
-     * the object is an implementation of{@link DataStoreTypes.Item}, to represent the archived data
+     * the object is an implementation of{@link DataStorageTypes.Item}, to represent the archived data
      */
-    public final static class ArchivedItem implements DataStoreTypes.Item {
+    public final static class ArchivedItem implements DataStorageTypes.Item {
         private final String id;
         private final Long timestamp;
         private final Boolean isArchived = Boolean.TRUE;
@@ -52,7 +52,7 @@ public abstract class DataModel {
         }
 
         @Override
-        public int compareTo(@NotNull DataStoreTypes.Item o) {
+        public int compareTo(@NotNull DataStorageTypes.Item o) {
             return timestamp.compareTo(o.getTimestamp());
         }
     }
@@ -146,23 +146,23 @@ public abstract class DataModel {
             return timestamp;
         }
 
-        Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> toStorageType() {
-            ImmutableMap.Builder<String, DataStoreTypes.Item> flags = ImmutableMap.builder();
+        Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> toStorageType() {
+            ImmutableMap.Builder<String, DataStorageTypes.Item> flags = ImmutableMap.builder();
             for (FeatureFlag flag : getFeatureFlags()) {
-                DataStoreTypes.Item item = flag.isArchived ? flag.toArchivedItem() : flag;
+                DataStorageTypes.Item item = flag.isArchived ? flag.toArchivedItem() : flag;
                 flags.put(item.getId(), item);
             }
-            ImmutableMap.Builder<String, DataStoreTypes.Item> segments = ImmutableMap.builder();
+            ImmutableMap.Builder<String, DataStorageTypes.Item> segments = ImmutableMap.builder();
             for (Segment segment : getSegments()) {
-                DataStoreTypes.Item item = segment.isArchived ? segment.toArchivedItem() : segment;
+                DataStorageTypes.Item item = segment.isArchived ? segment.toArchivedItem() : segment;
                 segments.put(item.getId(), item);
             }
-            return ImmutableMap.of(DataStoreTypes.FEATURES, flags.build(), DataStoreTypes.SEGMENTS, segments.build());
+            return ImmutableMap.of(DataStorageTypes.FEATURES, flags.build(), DataStorageTypes.SEGMENTS, segments.build());
         }
     }
 
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
-    static class Segment implements DataStoreTypes.Item, JsonHelper.AfterJsonParseDeserializable {
+    static class Segment implements DataStorageTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         private final String id;
         private final Boolean isArchived;
         @Expose(serialize = false)
@@ -199,7 +199,7 @@ public abstract class DataModel {
 
         @Override
         public Integer getType() {
-            return FFC_SEGMENT;
+            return FB_SEGMENT;
         }
 
         public List<String> getIncluded() {
@@ -226,7 +226,7 @@ public abstract class DataModel {
             return null;
         }
 
-        public DataStoreTypes.Item toArchivedItem() {
+        public DataStorageTypes.Item toArchivedItem() {
             return new ArchivedItem(this.id, this.timestamp);
         }
 
@@ -236,13 +236,13 @@ public abstract class DataModel {
         }
 
         @Override
-        public int compareTo(@NotNull DataStoreTypes.Item o) {
+        public int compareTo(@NotNull DataStorageTypes.Item o) {
             return timestamp.compareTo(o.getTimestamp());
         }
     }
 
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
-    static class FeatureFlag implements DataStoreTypes.Item, JsonHelper.AfterJsonParseDeserializable {
+    static class FeatureFlag implements DataStorageTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         final String id;
         @Expose(serialize = false)
         final Date updatedAt;
@@ -278,7 +278,7 @@ public abstract class DataModel {
             this.disabledVariationId = disabledVariationId;
         }
 
-        public DataStoreTypes.Item toArchivedItem() {
+        public DataStorageTypes.Item toArchivedItem() {
             return new ArchivedItem(this.key, this.timestamp);
         }
 
@@ -359,7 +359,7 @@ public abstract class DataModel {
         }
 
         @Override
-        public int compareTo(@NotNull DataStoreTypes.Item o) {
+        public int compareTo(@NotNull DataStorageTypes.Item o) {
             return timestamp.compareTo(o.getTimestamp());
         }
     }
@@ -408,12 +408,15 @@ public abstract class DataModel {
     static final class TargetRule {
         private final boolean includedInExpt;
 
+        private final String dispatchKey;
+
         private final List<Condition> conditions;
 
         private final List<RolloutVariation> variations;
 
-        TargetRule(boolean includedInExpt, List<Condition> conditions, List<RolloutVariation> variations) {
+        TargetRule(boolean includedInExpt, String dispatchKey, List<Condition> conditions, List<RolloutVariation> variations) {
             this.includedInExpt = includedInExpt;
+            this.dispatchKey = dispatchKey;
             this.conditions = conditions;
             this.variations = variations;
         }
@@ -428,6 +431,10 @@ public abstract class DataModel {
 
         public List<RolloutVariation> getVariations() {
             return variations == null ? Collections.emptyList() : variations;
+        }
+
+        public String getDispatchKey() {
+            return dispatchKey;
         }
     }
 
@@ -491,10 +498,13 @@ public abstract class DataModel {
     static final class Fallthrough {
         private final boolean includedInExpt;
 
+        private final String dispatchKey;
+
         private final List<RolloutVariation> variations;
 
-        public Fallthrough(boolean includedInExpt, List<RolloutVariation> variations) {
+        Fallthrough(boolean includedInExpt, String dispatchKey, List<RolloutVariation> variations) {
             this.includedInExpt = includedInExpt;
+            this.dispatchKey = dispatchKey;
             this.variations = variations;
         }
 
@@ -504,6 +514,10 @@ public abstract class DataModel {
 
         public List<RolloutVariation> getVariations() {
             return variations == null ? Collections.emptyList() : variations;
+        }
+
+        public String getDispatchKey() {
+            return dispatchKey;
         }
     }
 

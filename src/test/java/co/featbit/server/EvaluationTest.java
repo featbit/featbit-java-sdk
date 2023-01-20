@@ -2,7 +2,7 @@ package co.featbit.server;
 
 import co.featbit.commons.model.FBUser;
 import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,8 +10,8 @@ import static co.featbit.server.Evaluator.REASON_FALLTHROUGH;
 import static co.featbit.server.Evaluator.REASON_FLAG_OFF;
 import static co.featbit.server.Evaluator.REASON_RULE_MATCH;
 import static co.featbit.server.Evaluator.REASON_TARGET_MATCH;
-import static co.featbit.server.exterior.DataStoreTypes.FEATURES;
-import static co.featbit.server.exterior.DataStoreTypes.SEGMENTS;
+import static co.featbit.server.exterior.DataStorageTypes.FEATURES;
+import static co.featbit.server.exterior.DataStorageTypes.SEGMENTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EvaluationTest extends ComponentBaseTest {
@@ -42,12 +42,12 @@ class EvaluationTest extends ComponentBaseTest {
         dataStorage.init(data.toStorageType(), data.getTimestamp());
 
         Evaluator.Getter<DataModel.FeatureFlag> flagGetter = key -> {
-            DataStoreTypes.Item item = dataStorage.get(FEATURES, key);
+            DataStorageTypes.Item item = dataStorage.get(FEATURES, key);
             return item == null ? null : (DataModel.FeatureFlag) item;
         };
 
         Evaluator.Getter<DataModel.Segment> segmentGetter = key -> {
-            DataStoreTypes.Item item = dataStorage.get(SEGMENTS, key);
+            DataStorageTypes.Item item = dataStorage.get(SEGMENTS, key);
             return item == null ? null : (DataModel.Segment) item;
         };
 

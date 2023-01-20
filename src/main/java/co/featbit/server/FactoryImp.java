@@ -4,7 +4,7 @@ import co.featbit.server.exterior.BasicConfig;
 import co.featbit.server.exterior.Context;
 import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageFactory;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.DataSynchronizerFactory;
 import co.featbit.server.exterior.DefaultSender;
@@ -69,22 +69,22 @@ abstract class FactoryImp {
         static final NullDataStorage SINGLETON = new NullDataStorage();
 
         @Override
-        public void init(Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData, Long version) {
+        public void init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
 
         }
 
         @Override
-        public DataStoreTypes.Item get(DataStoreTypes.Category category, String key) {
+        public DataStorageTypes.Item get(DataStorageTypes.Category category, String key) {
             return null;
         }
 
         @Override
-        public Map<String, DataStoreTypes.Item> getAll(DataStoreTypes.Category category) {
+        public Map<String, DataStorageTypes.Item> getAll(DataStorageTypes.Category category) {
             return ImmutableMap.of();
         }
 
         @Override
-        public boolean upsert(DataStoreTypes.Category category, String key, DataStoreTypes.Item item, Long version) {
+        public boolean upsert(DataStorageTypes.Category category, String key, DataStorageTypes.Item item, Long version) {
             return true;
         }
 

@@ -45,7 +45,7 @@ install the sdk in using maven
     <dependency>
         <groupId>co.featbit</groupId>
         <artifactId>Featbit-Java-SDK</artifactId>
-        <version>1.0.4</version>
+        <version>1.0.5</version>
     </dependency>
 </dependencies>
 ```
@@ -184,16 +184,19 @@ if(client.isInitialized()){
     // Evaluation details
     FlagState<String> res = client.variationDetail("flag key", user, "Not Found");
     // Flag value
-    String res = client.variation("flag key", user, "Not Found");
+    String value = client.variation("flag key", user, "Not Found");
+    
     // get all variations for a given user
-    AllFlagStates<String> res = client.getAllLatestFlagsVariations(user);
+    AllFlagStates states = client.getAllLatestFlagsVariations(user);
+    EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
+    value = states.getString("flag key", user, "Not Found");
 }
 ```
 
 If evaluation called before Java SDK client initialized or you set the wrong flag key or user for the evaluation, SDK will return 
 the default value you set. The `FlagState` and `AllFlagStates` will all details of later evaluation including the error reason.
 
-SDK supports String, Boolean, and Number as the return type of flag values, see JavaDocs for more details.
+SDK supports String, Boolean, and Number and Json as the return type of flag values, see JavaDocs for more details.
 
 ### Experiments (A/B/n Testing)
 We support automatic experiments for pageviews and clicks, you just need to set your experiment on our SaaS platform, then you should be able to see the result in near real time after the experiment is started.

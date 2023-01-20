@@ -140,7 +140,7 @@ public interface FBClient extends Closeable {
      * @param user the end user requesting the flag
      * @return a {@link AllFlagStates}
      */
-    AllFlagStates<String> getAllLatestFlagsVariations(FBUser user);
+    AllFlagStates getAllLatestFlagsVariations(FBUser user);
 
     /**
      * Calculates the value of a feature flag for a given user, and returns an object that describes the

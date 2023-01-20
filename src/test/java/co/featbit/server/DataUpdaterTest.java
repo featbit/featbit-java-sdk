@@ -1,7 +1,7 @@
 package co.featbit.server;
 
 import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import com.google.common.collect.ImmutableMap;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
@@ -17,7 +17,7 @@ import static co.featbit.server.Status.DATA_STORAGE_UPDATE_ERROR;
 import static co.featbit.server.Status.StateType.INITIALIZING;
 import static co.featbit.server.Status.StateType.INTERRUPTED;
 import static co.featbit.server.Status.StateType.OFF;
-import static co.featbit.server.exterior.DataStoreTypes.DATATEST;
+import static co.featbit.server.exterior.DataStorageTypes.DATATESTS;
 import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
@@ -33,7 +33,7 @@ class DataUpdaterTest {
     private Status.DataUpdaterImpl dataUpdater;
     private Status.DataUpdateStatusProvider dataUpdateStatusProvider;
     private final EasyMockSupport support = new EasyMockSupport();
-    private final DataStoreTypes.Item item1 = new TestDataModel.TestItem(false, "test item 1");
+    private final DataStorageTypes.Item item1 = new TestDataModel.TestItem(false, "test item 1");
 
     @AfterEach
     void dispose() {
@@ -47,12 +47,12 @@ class DataUpdaterTest {
         dataStorage = new InMemoryDataStorage();
         dataUpdater = new Status.DataUpdaterImpl(dataStorage);
 
-        Map<String, DataStoreTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
-        Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData = ImmutableMap.of(DATATEST, items);
+        Map<String, DataStorageTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
+        Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData = ImmutableMap.of(DATATESTS, items);
         dataUpdater.init(allData, 1L);
         assertTrue(dataUpdater.storageInitialized());
         assertEquals(1L, dataUpdater.getVersion());
-        assertEquals(item1, dataStorage.get(DATATEST, item1.getId()));
+        assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
     }
 
     @Test
@@ -65,8 +65,8 @@ class DataUpdaterTest {
         expect(dataStorage.isInitialized()).andReturn(false).anyTimes();
         support.replayAll();
 
-        Map<String, DataStoreTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
-        Map<DataStoreTypes.Category, Map<String, DataStoreTypes.Item>> allData = ImmutableMap.of(DATATEST, items);
+        Map<String, DataStorageTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
+        Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData = ImmutableMap.of(DATATESTS, items);
         dataUpdater.init(allData, 1L);
         assertEquals(INITIALIZING, dataUpdater.getCurrentState().getStateType());
         assertEquals(DATA_STORAGE_INIT_ERROR, dataUpdater.getCurrentState().getErrorTrack().getErrorType());
@@ -78,10 +78,10 @@ class DataUpdaterTest {
         dataStorage = new InMemoryDataStorage();
         dataUpdater = new Status.DataUpdaterImpl(dataStorage);
 
-        assertTrue(dataUpdater.upsert(DATATEST, item1.getId(), item1, 1L));
+        assertTrue(dataUpdater.upsert(DATATESTS, item1.getId(), item1, 1L));
         assertTrue(dataUpdater.storageInitialized());
         assertEquals(1L, dataUpdater.getVersion());
-        assertEquals(item1, dataStorage.get(DATATEST, item1.getId()));
+        assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
     }
 
     @Test
@@ -89,13 +89,13 @@ class DataUpdaterTest {
         dataStorage = support.createNiceMock(DataStorage.class);
         dataUpdater = new Status.DataUpdaterImpl(dataStorage, Status.State.OKState());
 
-        expect(dataStorage.upsert(anyObject(DataStoreTypes.Category.class),
+        expect(dataStorage.upsert(anyObject(DataStorageTypes.Category.class),
                 anyString(),
-                anyObject(DataStoreTypes.Item.class),
+                anyObject(DataStorageTypes.Item.class),
                 anyLong())).andThrow(new RuntimeException("test exception"));
         expect(dataStorage.isInitialized()).andReturn(false).anyTimes();
         support.replayAll();
-        dataUpdater.upsert(DATATEST, item1.getId(), item1, 1L);
+        dataUpdater.upsert(DATATESTS, item1.getId(), item1, 1L);
         assertEquals(INTERRUPTED, dataUpdater.getCurrentState().getStateType());
         assertEquals(DATA_STORAGE_UPDATE_ERROR, dataUpdater.getCurrentState().getErrorTrack().getErrorType());
         assertFalse(dataUpdater.storageInitialized());

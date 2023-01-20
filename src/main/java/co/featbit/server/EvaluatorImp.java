@@ -91,7 +91,8 @@ final class EvaluatorImp extends Evaluator {
                 featureFlag.exptIncludeAllTargets(),
                 targetRule.includedInExpt(),
                 featureFlag.getKey(),
-                featureFlag.getName());
+                featureFlag.getName(),
+                targetRule.getDispatchKey());
     }
 
     private boolean ifUserMatchRule(FBUser user, List<DataModel.Condition> conditions) {
@@ -161,12 +162,12 @@ final class EvaluatorImp extends Evaluator {
 
     private boolean trueClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
-        return pv != null && pv.toLowerCase().equals("true");
+        return pv != null && pv.equalsIgnoreCase("true");
     }
 
     private boolean falseClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
-        return pv != null && pv.toLowerCase().equals("false");
+        return pv != null && pv.equalsIgnoreCase("false");
     }
 
     private boolean matchRegExClause(FBUser user, DataModel.Condition condition) {
@@ -242,7 +243,8 @@ final class EvaluatorImp extends Evaluator {
                 featureFlag.exptIncludeAllTargets(),
                 fallthrough.includedInExpt(),
                 featureFlag.getKey(),
-                featureFlag.getName());
+                featureFlag.getName(),
+                fallthrough.getDispatchKey());
     }
 
     private EvalResult getRollOutVariationOption(DataModel.FeatureFlag featureFlag,
@@ -252,20 +254,24 @@ final class EvaluatorImp extends Evaluator {
                                                  Boolean exptIncludeAllTargets,
                                                  Boolean ruleIncludedInExperiment,
                                                  String flagKeyName,
-                                                 String flagName) {
-        String newUserKey = Base64.getEncoder().encodeToString(user.getKey().getBytes());
+                                                 String flagName,
+                                                 String dispatchKey) {
+        dispatchKey = StringUtils.isEmpty(dispatchKey) ? "keyid" : dispatchKey;
+        String userAttr = user.getProperty(dispatchKey);
+        userAttr = userAttr == null ? "" : userAttr;
+        String dispatchKeyValue = String.join("", flagKeyName, userAttr);
         return rollouts.stream()
-                .filter(rollout -> VariationSplittingAlgorithm.ifKeyBelongsPercentage(user.getKey(), rollout.getRollout()))
+                .filter(rollout -> VariationSplittingAlgorithm.ifKeyBelongsPercentage(dispatchKeyValue, rollout.getRollout()))
                 .findFirst()
                 .map(rollout -> EvalResult.of(featureFlag.getVariation(rollout.getId()),
                         reason,
-                        isSendToExperiment(newUserKey, rollout, exptIncludeAllTargets, ruleIncludedInExperiment),
+                        isSendToExperiment(dispatchKeyValue, rollout, exptIncludeAllTargets, ruleIncludedInExperiment),
                         flagKeyName,
                         flagName))
                 .orElse(null);
     }
 
-    private boolean isSendToExperiment(String user,
+    private boolean isSendToExperiment(String dispatchKeyValue,
                                        DataModel.RolloutVariation rollout,
                                        Boolean exptIncludeAllRules,
                                        Boolean ruleIncludedInExperiment) {
@@ -282,7 +288,8 @@ final class EvaluatorImp extends Evaluator {
             if (upperBound > 1D) {
                 upperBound = 1D;
             }
-            return VariationSplittingAlgorithm.ifKeyBelongsPercentage(user, new double[]{0D, upperBound});
+            String newDispatchKeyValue = String.join("", EXPT_KEY_PREFIX, dispatchKeyValue);
+            return VariationSplittingAlgorithm.ifKeyBelongsPercentage(newDispatchKeyValue, new double[]{0D, upperBound});
         }
         return false;
     }

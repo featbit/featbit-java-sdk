@@ -3,7 +3,7 @@ package co.featbit.server;
 import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.FlagState;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import org.slf4j.Logger;
 
 /**
@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 abstract class Evaluator {
 
     protected static final Logger logger = Loggers.EVALUATION;
+
+    protected static final String EXPT_KEY_PREFIX = "expt";
     protected static final String NO_EVAL_RES = "NE";
     protected static final String DEFAULT_JSON_VALUE = "DJV";
     protected static final String REASON_USER_NOT_SPECIFIED = "user not specified";
@@ -68,7 +70,7 @@ abstract class Evaluator {
     abstract EvalResult evaluate(DataModel.FeatureFlag flag, FBUser user, InsightTypes.Event event);
 
     @FunctionalInterface
-    interface Getter<T extends DataStoreTypes.Item> {
+    interface Getter<T extends DataStorageTypes.Item> {
         T get(String key);
     }
 

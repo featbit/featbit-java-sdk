@@ -5,7 +5,7 @@ import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.FlagState;
 import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStoreTypes;
+import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import co.featbit.server.exterior.FBClient;
 import co.featbit.server.exterior.InsightProcessor;
@@ -49,7 +49,6 @@ class FBClientTest extends FBClientBaseTest {
     private FBUser cnPhoneNumber;
     private FBUser frPhoneNumber;
     private FBUser email;
-    private FBUser dummy;
 
     private FBConfig.Builder fakeConfigBuilder;
 
@@ -72,10 +71,7 @@ class FBClientTest extends FBClientBaseTest {
         cnPhoneNumber = new FBUser.Builder("18555358000").userName("test-user-5").build();
         frPhoneNumber = new FBUser.Builder("0603111111").userName("test-user-6").build();
         email = new FBUser.Builder("test-user-7@featbit.com").userName("test-user-7").build();
-        dummy = new FBUser.Builder("12345").userName("dummy").build();
-        fakeConfigBuilder = new FBConfig.Builder()
-                .streamingURL(fakeUrl)
-                .eventURL(fakeUrl);
+        fakeConfigBuilder = new FBConfig.Builder().streamingURL(fakeUrl).eventURL(fakeUrl);
         initFuture = support.createNiceMock(Future.class);
         dataSynchronizer = support.createNiceMock(DataSynchronizer.class);
         insightProcessor = support.createNiceMock(InsightProcessor.class);
@@ -83,9 +79,7 @@ class FBClientTest extends FBClientBaseTest {
     }
 
     private FBClient createMockClient(FBConfig.Builder config) {
-        config.dataSynchronizerFactory(mockDataSynchronizerFactory(dataSynchronizer))
-                .insightProcessorFactory(mockInsightProcessorFactory(insightProcessor))
-                .dataStorageFactory(mockDataStorageFactory(dataStorage));
+        config.dataSynchronizerFactory(mockDataSynchronizerFactory(dataSynchronizer)).insightProcessorFactory(mockInsightProcessorFactory(insightProcessor)).dataStorageFactory(mockDataStorageFactory(dataStorage));
         return new FBClientImp(fakeEnvSecret, config.build());
     }
 
@@ -161,9 +155,9 @@ class FBClientTest extends FBClientBaseTest {
     void testJsonVariation() throws IOException {
         try (FBClient client = initClientInOfflineMode()) {
             //dummy game: 25% win 100 euros
-            Dummy dummy1 = client.jsonVariation("ff-test-json", dummy, Dummy.class, null);
+            Dummy dummy1 = client.jsonVariation("ff-test-json", user1, Dummy.class, null);
             assertEquals(200, dummy1.code);
-            FlagState<Dummy> dummy2 = client.jsonVariationDetail("ff-test-json", user1, Dummy.class, null);
+            FlagState<Dummy> dummy2 = client.jsonVariationDetail("ff-test-json", user2, Dummy.class, null);
             assertEquals(404, dummy2.getData().getVariation().code);
             assertEquals(REASON_FALLTHROUGH, dummy2.getData().getReason());
         }
@@ -184,19 +178,22 @@ class FBClientTest extends FBClientBaseTest {
     @Test
     void testAllLatestFlagsVariations() throws IOException {
         try (FBClient client = initClientInOfflineMode()) {
-            AllFlagStates<String> states = client.getAllLatestFlagsVariations(user1);
-            EvalDetail<String> ed = states.get("ff-test-bool");
-            assertEquals("true", ed.getVariation());
-            assertEquals(REASON_TARGET_MATCH, ed.getReason());
-            ed = states.get("ff-test-number");
-            assertEquals("1", ed.getVariation());
-            assertEquals(REASON_RULE_MATCH, ed.getReason());
-            ed = states.get("ff-test-string");
-            assertEquals("others", ed.getVariation());
-            assertEquals(REASON_FALLTHROUGH, ed.getReason());
-            ed = states.get("ff-test-seg");
-            assertEquals("teamA", ed.getVariation());
-            assertEquals(REASON_RULE_MATCH, ed.getReason());
+            AllFlagStates states = client.getAllLatestFlagsVariations(user1);
+            EvalDetail<Boolean> ed1 = states.getBooleanDetail("ff-test-bool", false);
+            assertEquals(true, ed1.getVariation());
+            assertEquals(REASON_TARGET_MATCH, ed1.getReason());
+            EvalDetail<Integer> ed2 = states.getIntegerDetail("ff-test-number", 0);
+            Long longValue = states.getLong("ff-test-number", 0L);
+            Double doubleValue = states.getDouble("ff-test-number", 0D);
+            assertEquals(1, ed2.getVariation());
+            assertEquals(1L, longValue);
+            assertEquals(1D, doubleValue);
+            assertEquals(REASON_RULE_MATCH, ed2.getReason());
+            EvalDetail<String> ed3 = states.getStringDetail("ff-test-string", "");
+            assertEquals("others", ed3.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed3.getReason());
+            String team = states.getString("ff-test-seg", "");
+            assertEquals("teamA", team);
         }
     }
 
@@ -215,7 +212,7 @@ class FBClientTest extends FBClientBaseTest {
             FlagState<Integer> state1 = client.intVariationDetail("ff-test-bool", user1, -1);
             assertEquals(-1, state1.getData().getVariation());
             assertEquals(REASON_WRONG_TYPE, state1.getData().getReason());
-            AllFlagStates<String> states = client.getAllLatestFlagsVariations(null);
+            AllFlagStates states = client.getAllLatestFlagsVariations(null);
             assertFalse(states.isSuccess());
             assertEquals(REASON_USER_NOT_SPECIFIED, states.getMessage());
         }
@@ -234,7 +231,7 @@ class FBClientTest extends FBClientBaseTest {
             FlagState<Boolean> state = client.boolVariationDetail("ff-test-bool", user1, false);
             assertFalse(state.getData().getVariation());
             assertEquals(REASON_CLIENT_NOT_READY, state.getData().getReason());
-            AllFlagStates<String> states = client.getAllLatestFlagsVariations(user1);
+            AllFlagStates states = client.getAllLatestFlagsVariations(user1);
             assertFalse(states.isSuccess());
             assertEquals(REASON_CLIENT_NOT_READY, states.getMessage());
             support.verifyAll();
@@ -243,7 +240,7 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testVariationThrowException() throws Exception {
-        expect(dataStorage.get(anyObject(DataStoreTypes.Category.class), anyString())).andThrow(new RuntimeException("test exception"));
+        expect(dataStorage.get(anyObject(DataStorageTypes.Category.class), anyString())).andThrow(new RuntimeException("test exception"));
         expect(dataSynchronizer.start()).andReturn(initFuture);
         expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andReturn(true);
         expect(dataSynchronizer.isInitialized()).andReturn(true).anyTimes();
@@ -286,10 +283,7 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testConstructEmptyUrl() throws IOException {
-        FBConfig errorConfig = new FBConfig.Builder()
-                .streamingURL("")
-                .eventURL("")
-                .build();
+        FBConfig errorConfig = new FBConfig.Builder().streamingURL("").eventURL("").build();
         try (FBClient client = new FBClientImp(fakeEnvSecret, errorConfig)) {
             fail("illegal argument exception");
         } catch (IllegalArgumentException e) {
@@ -299,10 +293,7 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testConstructIllegalUrl() throws IOException {
-        FBConfig errorConfig = new FBConfig.Builder()
-                .streamingURL("urn:isbn:0-294-56559-3")
-                .eventURL("mailto:John.Doe@example.com")
-                .build();
+        FBConfig errorConfig = new FBConfig.Builder().streamingURL("urn:isbn:0-294-56559-3").eventURL("mailto:John.Doe@example.com").build();
         try (FBClient client = new FBClientImp(fakeEnvSecret, errorConfig)) {
             fail("illegal argument exception");
         } catch (IllegalArgumentException e) {
