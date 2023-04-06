@@ -96,6 +96,10 @@ public abstract class InsightTypes {
         public boolean isSendEvent() {
             return user != null && !userVariations.isEmpty();
         }
+
+        public void updateTimeStamp(){
+            userVariations.forEach(FlagEventVariation::updateTimestamp);
+        }
     }
 
     @JsonAdapter(MetricEventSerializer.class)
@@ -127,7 +131,7 @@ public abstract class InsightTypes {
 
     static final class FlagEventVariation {
         private final String featureFlagKeyName;
-        private final long timestamp;
+        private long timestamp;
         private final Evaluator.EvalResult variation;
 
         FlagEventVariation(String featureFlagKeyName, long timestamp, Evaluator.EvalResult variation) {
@@ -146,6 +150,10 @@ public abstract class InsightTypes {
 
         public long getTimestamp() {
             return timestamp;
+        }
+
+        public void updateTimestamp() {
+            this.timestamp = Instant.now().toEpochMilli();
         }
 
         public Evaluator.EvalResult getVariation() {

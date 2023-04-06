@@ -3,12 +3,7 @@ package co.featbit.server;
 import co.featbit.commons.model.AllFlagStates;
 import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
-import co.featbit.commons.model.FlagState;
-import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStorageTypes;
-import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.FBClient;
-import co.featbit.server.exterior.InsightProcessor;
+import co.featbit.server.exterior.*;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,24 +16,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static co.featbit.server.Evaluator.REASON_CLIENT_NOT_READY;
-import static co.featbit.server.Evaluator.REASON_ERROR;
-import static co.featbit.server.Evaluator.REASON_FALLTHROUGH;
-import static co.featbit.server.Evaluator.REASON_FLAG_NOT_FOUND;
-import static co.featbit.server.Evaluator.REASON_RULE_MATCH;
-import static co.featbit.server.Evaluator.REASON_TARGET_MATCH;
-import static co.featbit.server.Evaluator.REASON_USER_NOT_SPECIFIED;
-import static co.featbit.server.Evaluator.REASON_WRONG_TYPE;
-import static co.featbit.server.TestFactory.mockDataStorageFactory;
-import static co.featbit.server.TestFactory.mockDataSynchronizerFactory;
-import static co.featbit.server.TestFactory.mockInsightProcessorFactory;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.expect;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static co.featbit.server.Evaluator.*;
+import static co.featbit.server.TestFactory.*;
+import static org.easymock.EasyMock.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(EasyMockExtension.class)
 class FBClientTest extends FBClientBaseTest {
@@ -88,17 +69,17 @@ class FBClientTest extends FBClientBaseTest {
         try (FBClient client = initClientInOfflineMode()) {
             //logic tests
             //user1 and user2 in the targeting users lists should return true
-            boolean res = client.isEnabled("ff-test-bool", user1);
+            boolean res = client.boolVariation("ff-test-bool", user1, false);
             assertTrue(res);
-            FlagState<Boolean> state = client.boolVariationDetail("ff-test-bool", user2, false);
-            assertTrue(state.getData().getVariation());
-            assertEquals(REASON_TARGET_MATCH, state.getData().getReason());
+            EvalDetail<Boolean> ed = client.boolVariationDetail("ff-test-bool", user2, false);
+            assertTrue(ed.getVariation());
+            assertEquals(REASON_TARGET_MATCH, ed.getReason());
             //user3 and user4 should get true or false according to percentage rollout
-            res = client.isEnabled("ff-test-bool", user3);
+            res = client.boolVariation("ff-test-bool", user3, false);
             assertFalse(res);
-            state = client.boolVariationDetail("ff-test-bool", user4, false);
-            assertTrue(state.getData().getVariation());
-            assertEquals(REASON_FALLTHROUGH, state.getData().getReason());
+            ed = client.boolVariationDetail("ff-test-bool", user4, false);
+            assertTrue(ed.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed.getReason());
         }
     }
 
@@ -109,14 +90,14 @@ class FBClientTest extends FBClientBaseTest {
             // us=1, fr=33, cn=86, others=9999
             int res = client.intVariation("ff-test-number", user1, -1);
             assertEquals(1, res);
-            FlagState<Long> state = client.longVariationDetail("ff-test-number", user2, -1L);
-            assertEquals(33L, state.getData().getVariation());
-            assertEquals(REASON_RULE_MATCH, state.getData().getReason());
+            EvalDetail<Long> ed = client.longVariationDetail("ff-test-number", user2, -1L);
+            assertEquals(33L, ed.getVariation());
+            assertEquals(REASON_RULE_MATCH, ed.getReason());
             double res1 = client.doubleVariation("ff-test-number", user3, -1D);
             assertEquals(86D, res1);
-            FlagState<Double> state1 = client.doubleVariationDetail("ff-test-number", user4, -1D);
-            assertEquals(9999D, state1.getData().getVariation());
-            assertEquals(REASON_FALLTHROUGH, state1.getData().getReason());
+            EvalDetail<Double> ed1 = client.doubleVariationDetail("ff-test-number", user4, -1D);
+            assertEquals(9999D, ed1.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed1.getReason());
         }
     }
 
@@ -130,9 +111,9 @@ class FBClientTest extends FBClientBaseTest {
             assertEquals("phone number", res);
             res = client.variation("ff-test-string", email, "error");
             assertEquals("email", res);
-            FlagState<String> state = client.variationDetail("ff-test-string", user1, "error");
-            assertEquals("others", state.getData().getVariation());
-            assertEquals(REASON_FALLTHROUGH, state.getData().getReason());
+            EvalDetail<String> ed = client.variationDetail("ff-test-string", user1, "error");
+            assertEquals("others", ed.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed.getReason());
         }
     }
 
@@ -157,9 +138,9 @@ class FBClientTest extends FBClientBaseTest {
             //dummy game: 25% win 100 euros
             Dummy dummy1 = client.jsonVariation("ff-test-json", user1, Dummy.class, null);
             assertEquals(200, dummy1.code);
-            FlagState<Dummy> dummy2 = client.jsonVariationDetail("ff-test-json", user2, Dummy.class, null);
-            assertEquals(404, dummy2.getData().getVariation().code);
-            assertEquals(REASON_FALLTHROUGH, dummy2.getData().getReason());
+            EvalDetail<Dummy> dummy2 = client.jsonVariationDetail("ff-test-json", user2, Dummy.class, null);
+            assertEquals(404, dummy2.getVariation().code);
+            assertEquals(REASON_FALLTHROUGH, dummy2.getReason());
         }
     }
 
@@ -200,21 +181,21 @@ class FBClientTest extends FBClientBaseTest {
     @Test
     void testVariationArgumentError() throws IOException {
         try (FBClient client = initClientInOfflineMode()) {
-            FlagState<Boolean> state = client.boolVariationDetail("", user1, false);
-            assertFalse(state.getData().getVariation());
-            assertEquals(REASON_FLAG_NOT_FOUND, state.getData().getReason());
-            state = client.boolVariationDetail("ff-not-existed", user1, false);
-            assertFalse(state.getData().getVariation());
-            assertEquals(REASON_FLAG_NOT_FOUND, state.getData().getReason());
-            state = client.boolVariationDetail("ff-test-bool", null, false);
-            assertFalse(state.getData().getVariation());
-            assertEquals(REASON_USER_NOT_SPECIFIED, state.getData().getReason());
-            FlagState<Integer> state1 = client.intVariationDetail("ff-test-bool", user1, -1);
-            assertEquals(-1, state1.getData().getVariation());
-            assertEquals(REASON_WRONG_TYPE, state1.getData().getReason());
+            EvalDetail<Boolean> ed = client.boolVariationDetail("", user1, false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_FLAG_NOT_FOUND, ed.getReason());
+            ed = client.boolVariationDetail("ff-not-existed", user1, false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_FLAG_NOT_FOUND, ed.getReason());
+            ed = client.boolVariationDetail("ff-test-bool", null, false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_USER_NOT_SPECIFIED, ed.getReason());
+            EvalDetail<Integer> ed1 = client.intVariationDetail("ff-test-bool", user1, -1);
+            assertEquals(-1, ed1.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed1.getReason());
             AllFlagStates states = client.getAllLatestFlagsVariations(null);
             assertFalse(states.isSuccess());
-            assertEquals(REASON_USER_NOT_SPECIFIED, states.getMessage());
+            assertEquals(REASON_USER_NOT_SPECIFIED, states.getReason());
         }
     }
 
@@ -228,12 +209,12 @@ class FBClientTest extends FBClientBaseTest {
         try (FBClient client = createMockClient(fakeConfigBuilder)) {
             assertFalse(client.isInitialized());
             assertFalse(client.isFlagKnown("ff-test-bool"));
-            FlagState<Boolean> state = client.boolVariationDetail("ff-test-bool", user1, false);
-            assertFalse(state.getData().getVariation());
-            assertEquals(REASON_CLIENT_NOT_READY, state.getData().getReason());
+            EvalDetail<Boolean> ed = client.boolVariationDetail("ff-test-bool", user1, false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_CLIENT_NOT_READY, ed.getReason());
             AllFlagStates states = client.getAllLatestFlagsVariations(user1);
             assertFalse(states.isSuccess());
-            assertEquals(REASON_CLIENT_NOT_READY, states.getMessage());
+            assertEquals(REASON_CLIENT_NOT_READY, states.getReason());
             support.verifyAll();
         }
     }
@@ -247,9 +228,9 @@ class FBClientTest extends FBClientBaseTest {
         support.replayAll();
         fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));
         try (FBClient client = createMockClient(fakeConfigBuilder)) {
-            FlagState<Boolean> state = client.boolVariationDetail("ff-test-bool", user1, false);
-            assertFalse(state.getData().getVariation());
-            assertEquals(REASON_ERROR, state.getData().getReason());
+            EvalDetail<Boolean> ed = client.boolVariationDetail("ff-test-bool", user1, false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_ERROR, ed.getReason());
             support.verifyAll();
         }
     }

@@ -2,7 +2,6 @@ package co.featbit.server;
 
 import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
-import co.featbit.commons.model.FlagState;
 import co.featbit.server.exterior.DataStorageTypes;
 import org.slf4j.Logger;
 
@@ -75,6 +74,7 @@ abstract class Evaluator {
     }
 
     static class EvalResult {
+        private final String flagType;
         private final String index;
         private final String value;
         private final String reason;
@@ -83,7 +83,8 @@ abstract class Evaluator {
         private final String name;
 
 
-        EvalResult(String value, String index, String reason, boolean sendToExperiment, String keyName, String name) {
+        EvalResult(String flagType, String value, String index, String reason, boolean sendToExperiment, String keyName, String name) {
+            this.flagType = flagType;
             this.value = value;
             this.index = index;
             this.reason = reason;
@@ -93,24 +94,30 @@ abstract class Evaluator {
         }
 
         public static EvalResult error(String reason, String keyName, String name) {
-            return new EvalResult(null, NO_EVAL_RES, reason, false, keyName, name);
+            return new EvalResult(null, null, NO_EVAL_RES, reason, false, keyName, name);
         }
 
         public static EvalResult error(String defaultValue, String reason, String keyName, String name) {
-            return new EvalResult(defaultValue, NO_EVAL_RES, reason, false, keyName, name);
+            return new EvalResult(null, defaultValue, NO_EVAL_RES, reason, false, keyName, name);
         }
 
-        public static EvalResult of(DataModel.Variation option,
+        public static EvalResult of(String flagType,
+                                    DataModel.Variation option,
                                     String reason,
                                     boolean sendToExperiment,
                                     String keyName,
                                     String name) {
-            return new EvalResult(option.getValue(),
+            return new EvalResult(flagType,
+                    option.getValue(),
                     option.getId(),
                     reason,
                     sendToExperiment,
                     keyName,
                     name);
+        }
+
+        public String getFlagType() {
+            return flagType;
         }
 
         public String getValue() {
@@ -145,9 +152,7 @@ abstract class Evaluator {
             return EvalDetail.of(value, this.reason, this.keyName, this.name);
         }
 
-        public <T> FlagState<T> toFlagState(T value) {
-            return FlagState.of(EvalDetail.of(value, this.reason, this.keyName, this.name), !isDefaultValue());
-        }
+
 
     }
 

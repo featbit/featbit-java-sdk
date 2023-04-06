@@ -1,16 +1,10 @@
 package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
-import co.featbit.commons.json.JsonParseException;
 import co.featbit.commons.model.AllFlagStates;
 import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
-import co.featbit.commons.model.FlagState;
-import co.featbit.server.exterior.DataStorage;
-import co.featbit.server.exterior.DataStorageTypes;
-import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.FBClient;
-import co.featbit.server.exterior.InsightProcessor;
+import co.featbit.server.exterior.*;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,15 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-import static co.featbit.server.Evaluator.DEFAULT_JSON_VALUE;
-import static co.featbit.server.Evaluator.FLAG_KEY_UNKNOWN;
-import static co.featbit.server.Evaluator.FLAG_NAME_UNKNOWN;
-import static co.featbit.server.Evaluator.FLAG_VALUE_UNKNOWN;
-import static co.featbit.server.Evaluator.REASON_CLIENT_NOT_READY;
-import static co.featbit.server.Evaluator.REASON_ERROR;
-import static co.featbit.server.Evaluator.REASON_FLAG_NOT_FOUND;
-import static co.featbit.server.Evaluator.REASON_USER_NOT_SPECIFIED;
-import static co.featbit.server.Evaluator.REASON_WRONG_TYPE;
+import static co.featbit.server.Evaluator.*;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -172,9 +158,9 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
-    public FlagState<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue) {
+    public EvalDetail<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue) {
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, null);
-        return res.toFlagState(res.getValue());
+        return res.toEvalDetail(res.getValue());
     }
 
     @Override
@@ -185,15 +171,10 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
-    public boolean isEnabled(String featureFlagKey, FBUser user) {
-        return boolVariation(featureFlagKey, user, false);
-    }
-
-    @Override
-    public FlagState<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue) {
+    public EvalDetail<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
-        return res.toFlagState(BooleanUtils.toBoolean(res.getValue()));
+        return res.toEvalDetail(BooleanUtils.toBoolean(res.getValue()));
     }
 
     public double doubleVariation(String featureFlagKey, FBUser user, Double defaultValue) {
@@ -204,10 +185,10 @@ public final class FBClientImp implements FBClient {
 
 
     @Override
-    public FlagState<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue) {
+    public EvalDetail<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
-        return res.toFlagState(Double.parseDouble(res.getValue()));
+        return res.toEvalDetail(Double.parseDouble(res.getValue()));
     }
 
     public int intVariation(String featureFlagKey, FBUser user, Integer defaultValue) {
@@ -217,10 +198,10 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
-    public FlagState<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue) {
+    public EvalDetail<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
-        return res.toFlagState(Double.valueOf(res.getValue()).intValue());
+        return res.toEvalDetail(Double.valueOf(res.getValue()).intValue());
     }
 
     public long longVariation(String featureFlagKey, FBUser user, Long defaultValue) {
@@ -230,40 +211,23 @@ public final class FBClientImp implements FBClient {
     }
 
     @Override
-    public FlagState<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue) {
+    public EvalDetail<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue) {
         checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
-        return res.toFlagState(Double.valueOf(res.getValue()).longValue());
+        return res.toEvalDetail(Double.valueOf(res.getValue()).longValue());
     }
 
     @Override
     public <T> T jsonVariation(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
         String json = variation(featureFlagKey, user, DEFAULT_JSON_VALUE);
-        if (DEFAULT_JSON_VALUE.equals(json)) return defaultValue;
-        try {
-            return JsonHelper.deserialize(json, clazz);
-        } catch (JsonParseException ex) {
-            logger.error("FB JAVA SDK: json value can't be parsed", ex);
-            return defaultValue;
-        }
-
+        return Utils.parseJsonObject(json, defaultValue, clazz, DEFAULT_JSON_VALUE.equals(json));
     }
 
     @Override
-    public <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
-        T value;
+    public <T> EvalDetail<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, DEFAULT_JSON_VALUE, null);
-        if (DEFAULT_JSON_VALUE.equals(res.getValue())) {
-            value = defaultValue;
-        } else {
-            try {
-                value = JsonHelper.deserialize(res.getValue(), clazz);
-            } catch (JsonParseException ex) {
-                logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
-                value = defaultValue;
-            }
-        }
-        return res.toFlagState(value);
+        T value = Utils.parseJsonObject(res.getValue(), defaultValue, clazz, DEFAULT_JSON_VALUE.equals(res.getValue()));
+        return res.toEvalDetail(value);
     }
 
     private Evaluator.EvalResult evaluateInternal(String featureFlagKey, FBUser user, Object defaultValue, Class<?> requiredType) {
@@ -357,37 +321,29 @@ public final class FBClientImp implements FBClient {
 
     @Override
     public AllFlagStates getAllLatestFlagsVariations(FBUser user) {
-        ImmutableMap.Builder<EvalDetail<String>, InsightTypes.Event> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<Evaluator.EvalResult, InsightTypes.FlagEvent> builder = ImmutableMap.builder();
         boolean success = true;
         String errorString = "";
-        EvalDetail<String> ed;
         try {
             if (!isInitialized()) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: Evaluation is called before Java SDK client is initialized for feature flag");
-                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_CLIENT_NOT_READY, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
-                builder.put(ed, InsightTypes.NullEvent.INSTANCE);
                 success = false;
                 errorString = REASON_CLIENT_NOT_READY;
             } else if (user == null || StringUtils.isBlank(user.getKey())) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: null user or feature flag");
-                ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_USER_NOT_SPECIFIED, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
-                builder.put(ed, InsightTypes.NullEvent.INSTANCE);
                 success = false;
                 errorString = REASON_USER_NOT_SPECIFIED;
             } else {
                 Map<String, DataStorageTypes.Item> allFlags = this.storage.getAll(DataStorageTypes.FEATURES);
                 for (DataStorageTypes.Item item : allFlags.values()) {
-                    InsightTypes.Event event = InsightTypes.FlagEvent.of(user);
+                    InsightTypes.FlagEvent event = InsightTypes.FlagEvent.of(user);
                     DataModel.FeatureFlag flag = (DataModel.FeatureFlag) item;
                     Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
-                    ed = res.toEvalDetail(res.getValue());
-                    builder.put(ed, event);
+                    builder.put(res, event);
                 }
             }
         } catch (Exception ex) {
             logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
-            ed = EvalDetail.of(FLAG_VALUE_UNKNOWN, REASON_ERROR, FLAG_KEY_UNKNOWN, FLAG_NAME_UNKNOWN);
-            builder.put(ed, InsightTypes.NullEvent.INSTANCE);
             success = false;
             errorString = REASON_ERROR;
         }

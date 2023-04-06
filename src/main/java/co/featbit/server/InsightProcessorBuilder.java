@@ -46,7 +46,7 @@ public abstract class InsightProcessorBuilder implements InsightEventSenderFacto
      * @return InsightProcessorBuilder
      */
     public InsightProcessorBuilder capacity(int capacityOfInbox) {
-        this.capacity = (capacityOfInbox < 0) ? DEFAULT_CAPACITY : capacityOfInbox;
+        this.capacity = (capacityOfInbox <= 0) ? DEFAULT_CAPACITY : capacityOfInbox;
         return this;
     }
 
@@ -57,7 +57,7 @@ public abstract class InsightProcessorBuilder implements InsightEventSenderFacto
      * @return
      */
     public InsightProcessorBuilder flushInterval(long flushIntervalInMilliseconds) {
-        this.flushIntervalInMilliseconds = (flushIntervalInMilliseconds < 0) ? DEFAULT_FLUSH_INTERVAL : flushIntervalInMilliseconds;
+        this.flushIntervalInMilliseconds = (flushIntervalInMilliseconds <= 0) ? DEFAULT_FLUSH_INTERVAL : flushIntervalInMilliseconds;
         return this;
     }
 
@@ -68,7 +68,7 @@ public abstract class InsightProcessorBuilder implements InsightEventSenderFacto
      * @return
      */
     public InsightProcessorBuilder retryInterval(long retryIntervalInMilliseconds) {
-        this.retryIntervalInMilliseconds = (retryIntervalInMilliseconds < 0) ? DEFAULT_RETRY_DELAY : retryIntervalInMilliseconds;
+        this.retryIntervalInMilliseconds = (retryIntervalInMilliseconds <= 0) ? DEFAULT_RETRY_DELAY : retryIntervalInMilliseconds;
         return this;
     }
 
@@ -79,7 +79,7 @@ public abstract class InsightProcessorBuilder implements InsightEventSenderFacto
      * @return
      */
     public InsightProcessorBuilder maxRetryTimes(int maxRetryTimes) {
-        this.maxRetryTimes = (maxRetryTimes < 0) ? DEFAULT_RETRY_TIMES : maxRetryTimes;
+        this.maxRetryTimes = (maxRetryTimes <= 0) ? DEFAULT_RETRY_TIMES : maxRetryTimes;
         return this;
     }
 

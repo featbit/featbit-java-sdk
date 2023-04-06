@@ -114,8 +114,8 @@ public class FBConfig {
         }
 
         /**
-         * Sets the implementation of the data storage to be used for holding feature flags and
-         * related data received from LaunchDarkly, using a factory object.
+         * Sets the implementation of the {@link co.featbit.server.exterior.DataStorage} to be used for holding feature flags and
+         * related data received from feature flag center, using a factory object.
          * The default is{@link Factory#inMemoryDataStorageFactory()}
          *
          * @param dataStorageFactory a {@link DataStorageFactory} instance

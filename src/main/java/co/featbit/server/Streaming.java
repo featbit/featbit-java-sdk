@@ -211,7 +211,7 @@ final class Streaming implements DataSynchronizer {
                 isReconn = true;
                 message = StringUtils.isEmpty(reason) ? "unexpected close" : reason;
             }
-            logger.debug("Streaming WebSocket close reason: {}", message);
+            logger.info("Streaming WebSocket close reason: {}", message);
             if (isReconn && code != GOING_AWAY_CLOSE) {
                 // if code is not 1001, it's an unknown close code received by server
                 updater.updateStatus(Status.State.interruptedState(UNKNOWN_CLOSE_CODE, message));

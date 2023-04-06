@@ -1,8 +1,8 @@
 package co.featbit.server.exterior;
 
 import co.featbit.commons.model.AllFlagStates;
+import co.featbit.commons.model.EvalDetail;
 import co.featbit.commons.model.FBUser;
-import co.featbit.commons.model.FlagState;
 import co.featbit.server.FBClientImp;
 import co.featbit.server.Status;
 
@@ -45,15 +45,6 @@ public interface FBClient extends Closeable {
      * @return if the flag should be enabled, or {@code defaultValue} if the flag is disabled or an error occurs
      */
     boolean boolVariation(String featureFlagKey, FBUser user, Boolean defaultValue);
-
-    /**
-     * alias of boolVariation for a given user
-     *
-     * @param featureFlagKey the unique key for the feature flag
-     * @param user           the end user requesting the flag
-     * @return if the flag should be enabled, or false if the flag is disabled, or an error occurs
-     */
-    boolean isEnabled(String featureFlagKey, FBUser user);
 
     /**
      * Calculates the double value of a feature flag for a given user.
@@ -151,9 +142,9 @@ public interface FBClient extends Closeable {
      * @param featureFlagKey the unique key for the feature flag
      * @param user           the end user requesting the flag
      * @param defaultValue   the default value of the flag
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    FlagState<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue);
+    EvalDetail<String> variationDetail(String featureFlagKey, FBUser user, String defaultValue);
 
     /**
      * Calculates the value of a feature flag for a given user, and returns an object that describes the
@@ -163,9 +154,9 @@ public interface FBClient extends Closeable {
      * @param featureFlagKey the unique key for the feature flag
      * @param user           the end user requesting the flag
      * @param defaultValue   the default value of the flag
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    FlagState<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue);
+    EvalDetail<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue);
 
     /**
      * Calculates the double value of a feature flag for a given user, and returns an object that describes the
@@ -175,9 +166,9 @@ public interface FBClient extends Closeable {
      * @param featureFlagKey the unique key for the feature flag
      * @param user           the end user requesting the flag
      * @param defaultValue   the default value of the flag
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    FlagState<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue);
+    EvalDetail<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue);
 
     /**
      * Calculates the int value of a feature flag for a given user, and returns an object that describes the
@@ -189,9 +180,9 @@ public interface FBClient extends Closeable {
      * @param featureFlagKey the unique key for the feature flag
      * @param user           the end user requesting the flag
      * @param defaultValue   the default value of the flag
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    FlagState<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue);
+    EvalDetail<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue);
 
     /**
      * Calculates the long value of a feature flag for a given user, and returns an object that describes the
@@ -203,9 +194,9 @@ public interface FBClient extends Closeable {
      * @param featureFlagKey the unique key for the feature flag
      * @param user           the end user requesting the flag
      * @param defaultValue   the default value of the flag
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    FlagState<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue);
+    EvalDetail<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue);
 
     /**
      * Calculates the json value of a feature flag for a given user, and returns an object that describes the
@@ -216,9 +207,9 @@ public interface FBClient extends Closeable {
      * @param clazz          json deserialization class
      * @param defaultValue   the default value of the flag
      * @param <T>            json object type
-     * @return an {@link FlagState} object
+     * @return an {@link EvalDetail} object
      */
-    <T> FlagState<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue);
+    <T> EvalDetail<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue);
 
     /**
      * Flushes all pending events.

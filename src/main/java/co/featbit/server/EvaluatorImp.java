@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -61,7 +60,8 @@ final class EvaluatorImp extends Evaluator {
     private EvalResult matchFeatureFlagDisabledUserVariation(DataModel.FeatureFlag flag) {
         // case flag is off
         if (!flag.isEnabled()) {
-            return EvalResult.of(flag.getVariation(flag.getDisabledVariationId()),
+            return EvalResult.of(flag.getVariationType(),
+                    flag.getVariation(flag.getDisabledVariationId()),
                     REASON_FLAG_OFF,
                     false,
                     flag.getKey(), flag.getName());
@@ -73,7 +73,8 @@ final class EvaluatorImp extends Evaluator {
         return featureFlag.getTargetUsers().stream()
                 .filter(target -> target.isTargeted(user.getKey()))
                 .findFirst()
-                .map(target -> EvalResult.of(featureFlag.getVariation(target.getVariationId()),
+                .map(target -> EvalResult.of(featureFlag.getVariationType(),
+                        featureFlag.getVariation(target.getVariationId()),
                         REASON_TARGET_MATCH,
                         featureFlag.exptIncludeAllTargets(),
                         featureFlag.getKey(),
@@ -88,10 +89,7 @@ final class EvaluatorImp extends Evaluator {
                 targetRule.getVariations(),
                 user,
                 REASON_RULE_MATCH,
-                featureFlag.exptIncludeAllTargets(),
                 targetRule.includedInExpt(),
-                featureFlag.getKey(),
-                featureFlag.getName(),
                 targetRule.getDispatchKey());
     }
 
@@ -240,10 +238,7 @@ final class EvaluatorImp extends Evaluator {
                 fallthrough.getVariations(),
                 user,
                 REASON_FALLTHROUGH,
-                featureFlag.exptIncludeAllTargets(),
                 fallthrough.includedInExpt(),
-                featureFlag.getKey(),
-                featureFlag.getName(),
                 fallthrough.getDispatchKey());
     }
 
@@ -251,23 +246,21 @@ final class EvaluatorImp extends Evaluator {
                                                  Collection<DataModel.RolloutVariation> rollouts,
                                                  FBUser user,
                                                  String reason,
-                                                 Boolean exptIncludeAllTargets,
                                                  Boolean ruleIncludedInExperiment,
-                                                 String flagKeyName,
-                                                 String flagName,
                                                  String dispatchKey) {
         dispatchKey = StringUtils.isEmpty(dispatchKey) ? "keyid" : dispatchKey;
         String userAttr = user.getProperty(dispatchKey);
         userAttr = userAttr == null ? "" : userAttr;
-        String dispatchKeyValue = String.join("", flagKeyName, userAttr);
+        String dispatchKeyValue = String.join("", featureFlag.getKey(), userAttr);
         return rollouts.stream()
                 .filter(rollout -> VariationSplittingAlgorithm.ifKeyBelongsPercentage(dispatchKeyValue, rollout.getRollout()))
                 .findFirst()
-                .map(rollout -> EvalResult.of(featureFlag.getVariation(rollout.getId()),
+                .map(rollout -> EvalResult.of(featureFlag.getVariationType(),
+                        featureFlag.getVariation(rollout.getId()),
                         reason,
-                        isSendToExperiment(dispatchKeyValue, rollout, exptIncludeAllTargets, ruleIncludedInExperiment),
-                        flagKeyName,
-                        flagName))
+                        isSendToExperiment(dispatchKeyValue, rollout, featureFlag.exptIncludeAllTargets(), ruleIncludedInExperiment),
+                        featureFlag.getKey(),
+                        featureFlag.getName()))
                 .orElse(null);
     }
 
