@@ -83,7 +83,7 @@ Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required t
 
 ### Examples
 
-- [Go Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-golang/go_demo.go)
+- [Java Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-java/src/main/java/co/featbit/demo/JavaDemo.java)
 
 ## Core Concepts
 
