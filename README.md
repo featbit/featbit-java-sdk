@@ -1,7 +1,6 @@
-# JAVA Server Side SDK
+# FeatBit Server-Side SDK for Java
 
 ## Introduction
-
 
 This is the Java Server-Side SDK for the 100% open-source feature flags management
 platform [FeatBit](https://github.com/featbit/featbit).
@@ -9,12 +8,7 @@ platform [FeatBit](https://github.com/featbit/featbit).
 The FeatBit Server-Side SDK for Java is designed primarily for use in multi-user systems such as web servers and
 applications.
 
-This SDK has two main purposes:
-
-- Store the available feature flags and evaluate the feature flag variation for a given user
-- Send feature flag usage and custom events for the insights and A/B/n testing.
-
-## Data synchonization
+## Data synchronization
 
 We use websocket to make the local data synchronized with the FeatBit server, and then store them in memory by
 default. Whenever there is any change to a feature flag or its related data, this change will be pushed to the SDK and
@@ -29,7 +23,7 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
 
 ### Installation
 
-install the sdk in using maven
+- Install the SDK using Maven
 ```xml
 <dependencies>
     <dependency>
@@ -40,43 +34,54 @@ install the sdk in using maven
 </dependencies>
 ```
 
-install the sdk in using gradle
+- Install the SDK using Gradle
 ```
 implementation 'co.featbit:featbit-java-sdk:1.1.0'
 ```
 
-### Basic usage
+### Quick Start
 
 ```java
-    
+import co.featbit.commons.model.FBUser;
+import co.featbit.server.FBClientImp;
+import co.featbit.server.FBConfig;
+import co.featbit.server.exterior.FBClient;
+
+import java.io.IOException;
+
+public class Demo {
+  public static void main(String[] args) throws IOException {
     String envSecret = "<replace-with-your-env-secret>";
     String streamUrl = "ws://localhost:5100";
     String eventUrl = "http://localhost:5100";
-    
+
     FBConfig config = new FBConfig.Builder()
             .streamingURL(streamUrl)
             .eventURL(eventUrl)
             .build();
 
-    try (FBClient client = new FBClientImp(envSecret, config)) {
-        if (client.isInitialized()) {
-            FBUser user = new FBUser.Builder("<replace-with-your-user-key>")
-                        .userName("<replace-with-your-user-name>")
-                        .build();
-            String flagKey = "<replace-with-your-flag-key>";
-            
-            // evaluate a boolean flag for a given user
-            String flagValue = client.variation(flagKey, user, "default");
-            System.out.println(String.format("flag %s, returns %s for user %s", flagKey, flagValue, user.getKey()));
-            
-            // evaluate a boolean flag for a given user with evaluation detail
-            EvalDetail<String> ed = client.variationDetail(flagKey, user, "default");
-            System.out.println(String.format("flag %s, returns %s for user %s", flagKey, ed.getValue(), user.getKey()));
-            System.out.println(String.format("Reason Description: %s", ed.getReason()));
-        }
+    FBClient client = new FBClientImp(envSecret, config))
+    if (client.isInitialized()) {
+      FBUser user = new FBUser.Builder("<replace-with-your-user-key>")
+              .userName("<replace-with-your-user-name>")
+              .build();
+      String flagKey = "<replace-with-your-flag-key>";
+
+      // evaluate a boolean flag for a given user
+      String flagValue = client.variation(flagKey, user, "default");
+      System.out.printf("flag %s, returns %s for user %s%n", flagKey, flagValue, user.getKey());
+
+      // evaluate a boolean flag for a given user with evaluation detail
+      EvalDetail<String> ed = client.variationDetail(flagKey, user, "default");
+      System.out.println(String.format("flag %s, returns %s for user %s", flagKey, ed.getValue(), user.getKey()));
+      System.out.println(String.format("Reason Description: %s", ed.getReason()));
     }
+
+    // close the client to ensure that all insights are sent out before the app exits
+    client.close();
     System.out.println("APP FINISHED");
-    
+  }
+}
 ```
 
 Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required to initialize the SDK.
@@ -85,11 +90,11 @@ Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required t
 
 - [Java Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-java/src/main/java/co/featbit/demo/JavaDemo.java)
 
-## Core Concepts
+## SDK
 
 ### FBClient
 
-Applications SHOULD instantiate a single instance for the lifetime of the application. In the case where an application
+Applications SHOULD instantiate a single FBClient instance for the lifetime of the application. In the case where an application
 needs to evaluate feature flags from different environments, you may create multiple clients, but they should still be
 retained for the lifetime of the application rather than created per request or per thread.
 
@@ -106,34 +111,34 @@ continue trying to connect in the background unless there has been an `java.net.
 client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`.
 
 ```java
-    FBConfig config = new FBConfig.Builder()
-        .streamingURL(streamUrl)
-        .eventURL(eventUrl)
-        .startWaitTime(Duration.ofSeconds(10))
-        .build();
-    
-    FBClient client = new FBClientImp(envSecret, config);
-    if(client.isInitialized()){
-        // do whatever is appropriate
-    }
+FBConfig config = new FBConfig.Builder()
+    .streamingURL(streamUrl)
+    .eventURL(eventUrl)
+    .startWaitTime(Duration.ofSeconds(10))
+    .build();
+
+FBClient client = new FBClientImp(envSecret, config);
+if(client.isInitialized()){
+    // do whatever is appropriate
+}
 ```
 
 If you prefer to have the constructor return immediately, and then wait for initialization to finish at some other
 point, you can use `getDataUpdateStatusProvider()`, which provides an asynchronous way, as follows:
 
 ```java
-   FBConfig config = new FBConfig.Builder()
-        .streamingURL(streamUrl)
-        .eventURL(eventUrl)
-        .startWaitTime(Duration.ZERO)
-        .build();
-    FBClient client = new FBClientImp(sdkKey, config);
-    
-    // later, when you want to wait for initialization to finish:
-    boolean inited = client.getDataUpdateStatusProvider().waitForOKState(Duration.ofSeconds(10))
-    if (inited) {
-        // do whatever is appropriate
-    }
+FBConfig config = new FBConfig.Builder()
+    .streamingURL(streamUrl)
+    .eventURL(eventUrl)
+    .startWaitTime(Duration.ZERO)
+    .build();
+FBClient client = new FBClientImp(sdkKey, config);
+
+// later, when you want to wait for initialization to finish:
+boolean inited = client.getDataUpdateStatusProvider().waitForOKState(Duration.ofSeconds(10))
+if (inited) {
+    // do whatever is appropriate
+}
 ```
 
 ### FBConfig and Components
@@ -152,12 +157,12 @@ duration will not block and cause the constructor to return immediately.
 Here is an example of creating a client with default configurations:
 
 ```java
-    FBConfig config = new FBConfig.Builder()
-            .streamingURL(streamUrl)
-            .eventURL(eventUrl)
-            .build();
+FBConfig config = new FBConfig.Builder()
+        .streamingURL(streamUrl)
+        .eventURL(eventUrl)
+        .build();
 
-    FBClient client = new FBClientImp(envSecret, config);
+FBClient client = new FBClientImp(envSecret, config);
 ```
 
 `FBConfig` provides advanced configuration options for setting the SDK component or you want to customize the behavior
@@ -168,13 +173,13 @@ using a factory object. This object by defaut is a configuration builder obtaine
 With `HttpConfig`, Sets connection/read/write timeout, proxy or insecure/secure socket.
 
 ```java
-    HttpConfigFactory factory = Factory.httpConfigFactory()
-            .connectTime(Duration.ofMillis(3000))
-            .httpProxy("my-proxy", 9000)
+HttpConfigFactory factory = Factory.httpConfigFactory()
+        .connectTime(Duration.ofMillis(3000))
+        .httpProxy("my-proxy", 9000)
 
-    FBConfig config = new FBConfig.Builder()
-            .httpConfigFactory(factory)
-            .build();
+FBConfig config = new FBConfig.Builder()
+        .httpConfigFactory(factory)
+        .build();
 ```
 
 
@@ -183,9 +188,9 @@ user segments or any other related data received by the SDK. SDK sets the implem
 to instantiate a memory data storage. Developers can customize the data storage to persist received data in redis, mongodb, etc.
 
 ```java
-    FBConfig config = new FBConfig.Builder()
-            .dataStorageFactory(factory)
-            .build();
+FBConfig config = new FBConfig.Builder()
+        .dataStorageFactory(factory)
+        .build();
 ```
 
 `DataSynchronizerFactory` SDK sets the implementation of the `DataSynchronizer` that receives feature flag data from  your feature management platform, 
@@ -200,13 +205,13 @@ they can read the javadoc and source code.
 In some situations, you might want to stop making remote calls to FeatBit. Here is how:
 
 ```java
-    FBConfig config = new FBConfig.Builder()
-            .streamingURL(streamUrl)
-            .eventURL(eventUrl)
-            .offline(true)
-            .build();
+FBConfig config = new FBConfig.Builder()
+        .streamingURL(streamUrl)
+        .eventURL(eventUrl)
+        .offline(true)
+        .build();
 
-    FBClient client = new FBClientImp(envSecret, config);
+FBClient client = new FBClientImp(envSecret, config);
 ```
 When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
 fallback values because there are no feature flags or segments available. If you want to use your own data source,
@@ -226,19 +231,19 @@ curl -H "Authorization: <your-env-secret>" http://localhost:5100/api/public/sdk/
 Then, you can use this file to initialize the SDK:
 
 ```java
-    FBConfig config = new FBConfig.Builder()
-            .streamingURL(streamUrl)
-            .eventURL(eventUrl)
-            .offline(true)
-            .build();
+FBConfig config = new FBConfig.Builder()
+        .streamingURL(streamUrl)
+        .eventURL(eventUrl)
+        .offline(true)
+        .build();
 
-    FBClient client = new FBClientImp(envSecret, config);
-    
-    // init from json string in offline mode
-    String json = Resources.toString(Resources.getResource(fileName), Charsets.UTF_8);
-    if(client.initFromJsonFile(json)){
-        // do whatever is appropriate
-    }
+FBClient client = new FBClientImp(envSecret, config);
+
+// init from json string in offline mode
+String json = Resources.toString(Resources.getResource(fileName), Charsets.UTF_8);
+if(client.initFromJsonFile(json)){
+    // do whatever is appropriate
+}
 ```
 
 ### FBUser
@@ -249,10 +254,10 @@ The `key` must uniquely identify each user; this could be a username or email ad
 The `userName` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
 
 ```java
-    FBUser user = new FBUser.Builder("key")
-            .userName("name")
-            .custom("property", "value")
-            .build()
+FBUser user = new FBUser.Builder("key")
+        .userName("name")
+        .custom("property", "value")
+        .build()
 ```
 
 ### Evaluation
@@ -294,18 +299,16 @@ with following methods in `AllFlagStates`:
 Here is an example to retrieve the flag value or details for a string type flag:
 
 ```java
+// Evaluation details
+EvalDetail<String> detail = client.variationDetail("flag key", user, "Not Found");
 
-    // Evaluation details
-    EvalDetail<String> detail = client.variationDetail("flag key", user, "Not Found");
-    
-    // Flag value
-    String value = client.variation("flag key", user, "Not Found");
-    
-    // get all variations for a given user
-    AllFlagStates states = client.getAllLatestFlagsVariations(user);
-    EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
-    String value = states.getString("flag key", user, "Not Found");
+// Flag value
+String value = client.variation("flag key", user, "Not Found");
 
+// get all variations for a given user
+AllFlagStates states = client.getAllLatestFlagsVariations(user);
+EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
+String value = states.getString("flag key", user, "Not Found");
 ```
 
 ### Experiments (A/B/n Testing)
@@ -313,7 +316,7 @@ We support automatic experiments for pageviews and clicks, you just need to set 
 
 In case you need more control over the experiment data sent to our server, we offer a method to send custom event.
 ```java
-    client.trackMetric(user, eventName, numericValue);
+client.trackMetric(user, eventName, numericValue);
 ```
 **numericValue** is not mandatory, the default value is **1**.
 
