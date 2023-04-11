@@ -151,9 +151,6 @@ abstract class Evaluator {
         public <T> EvalDetail<T> toEvalDetail(T value) {
             return EvalDetail.of(value, this.reason, this.keyName, this.name);
         }
-
-
-
     }
 
 }
