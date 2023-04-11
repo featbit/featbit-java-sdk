@@ -53,7 +53,7 @@ import co.featbit.server.exterior.FBClient;
 
 import java.io.IOException;
 
-public class Demo {
+public class Main {
   public static void main(String[] args) throws IOException {
     String envSecret = "<replace-with-your-env-secret>";
     String streamUrl = "ws://localhost:5100";
@@ -242,7 +242,7 @@ FBConfig config = new FBConfig.Builder()
 FBClient client = new FBClientImp(envSecret, config);
 
 // init from json string in offline mode
-String json = Resources.toString(Resources.getResource(fileName), Charsets.UTF_8);
+String json = Resources.toString(Resources.getResource("featbit-bootstrap.json"), Charsets.UTF_8);
 if(client.initFromJsonFile(json)){
     // do whatever is appropriate
 }
@@ -250,7 +250,7 @@ if(client.initFromJsonFile(json)){
 
 ### FBUser
 
-`FFUser`: A collection of attributes that can affect flag evaluation, usually corresponding to a user of your application.
+A collection of attributes that can affect flag evaluation, usually corresponding to a user of your application.
 This object contains built-in properties(`key`, `userName`). The `key` and `userName` are required.
 The `key` must uniquely identify each user; this could be a username or email address for authenticated users, or a ID for anonymous users.
 The `userName` is used to search your user quickly. You may also define custom properties with arbitrary names and values.
