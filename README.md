@@ -46,6 +46,7 @@ implementation 'co.featbit:featbit-java-sdk:1.1.0'
 
 ```java
 import co.featbit.commons.model.FBUser;
+import co.featbit.commons.model.EvalDetail;
 import co.featbit.server.FBClientImp;
 import co.featbit.server.FBConfig;
 import co.featbit.server.exterior.FBClient;
@@ -63,7 +64,7 @@ public class Demo {
             .eventURL(eventUrl)
             .build();
 
-    FBClient client = new FBClientImp(envSecret, config))
+    FBClient client = new FBClientImp(envSecret, config);
     if (client.isInitialized()) {
       FBUser user = new FBUser.Builder("<replace-with-your-user-key>")
               .userName("<replace-with-your-user-name>")
