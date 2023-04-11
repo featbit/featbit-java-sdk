@@ -32,7 +32,7 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
     <dependency>
       <groupId>co.featbit</groupId>
       <artifactId>featbit-java-sdk</artifactId>
-      <version>1.0.5</version>
+      <version>1.1.0</version>
     </dependency>
 </dependencies>
 ```

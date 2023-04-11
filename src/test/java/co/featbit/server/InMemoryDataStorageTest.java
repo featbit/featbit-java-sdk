@@ -93,11 +93,11 @@ class InMemoryDataStorageTest {
         assertTrue(dataStorage.isInitialized());
         assertEquals(2L, dataStorage.getVersion());
         assertEquals(item2, dataStorage.get(DATATESTS, item2.getId()));
-        item1 = new TestDataModel.TestItem(item1.getId(), false, "updated test item 1");
-        dataStorage.upsert(DATATESTS, item1.getId(), item1, 3L);
+        TestDataModel.TestItem item3 = new TestDataModel.TestItem(item1.getId(), false, "updated test item 1");
+        dataStorage.upsert(DATATESTS, item3.getId(), item3, 3L);
         assertTrue(dataStorage.isInitialized());
         assertEquals(3L, dataStorage.getVersion());
-        assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
+        assertEquals(item3, dataStorage.get(DATATESTS, item3.getId()));
     }
 
     @Test
