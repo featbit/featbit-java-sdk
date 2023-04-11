@@ -24,12 +24,15 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
 ### Installation
 
 - Install the SDK using Maven
+
 ```xml
+
 <dependencies>
+    <!-- https://mvnrepository.com/artifact/co.featbit/featbit-java-sdk -->
     <dependency>
-        <groupId>co.featbit</groupId>
-        <artifactId>Featbit-Java-SDK</artifactId>
-        <version>1.1.0</version>
+      <groupId>co.featbit</groupId>
+      <artifactId>featbit-java-sdk</artifactId>
+      <version>1.0.5</version>
     </dependency>
 </dependencies>
 ```
@@ -215,9 +218,7 @@ FBClient client = new FBClientImp(envSecret, config);
 ```
 When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
 fallback values because there are no feature flags or segments available. If you want to use your own data source,
-SDK allows users to populate feature flags and segments data from a JSON string. 
-
-Here is an example: [fbclient_test_data.json](src/test/resources/fbclient_test_data.json).
+SDK allows users to populate feature flags and segments data from a JSON string. Here is an example: [fbclient_test_data.json](src/test/resources/fbclient_test_data.json).
 
 The format of the data in flags and segments is defined by FeatBit and is subject to change. Rather than trying to
 construct these objects yourself, it's simpler to request existing flags directly from the FeatBit server in JSON format
