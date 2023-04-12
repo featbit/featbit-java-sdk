@@ -44,6 +44,10 @@ implementation 'co.featbit:featbit-java-sdk:1.1.0'
 
 ### Quick Start
 
+> Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required to initialize the SDK.
+
+The following code demonstrates basic usage of the SDK.
+
 ```java
 import co.featbit.commons.model.FBUser;
 import co.featbit.commons.model.EvalDetail;
@@ -53,42 +57,42 @@ import co.featbit.server.exterior.FBClient;
 
 import java.io.IOException;
 
-public class Main {
-  public static void main(String[] args) throws IOException {
-    String envSecret = "<replace-with-your-env-secret>";
-    String streamUrl = "ws://localhost:5100";
-    String eventUrl = "http://localhost:5100";
+class Main {
+    public static void main(String[] args) throws IOException {
+        String envSecret = "<replace-with-your-env-secret>";
+        String streamUrl = "ws://localhost:5100";
+        String eventUrl = "http://localhost:5100";
 
-    FBConfig config = new FBConfig.Builder()
-            .streamingURL(streamUrl)
-            .eventURL(eventUrl)
-            .build();
+        FBConfig config = new FBConfig.Builder()
+                .streamingURL(streamUrl)
+                .eventURL(eventUrl)
+                .build();
 
-    FBClient client = new FBClientImp(envSecret, config);
-    if (client.isInitialized()) {
-      FBUser user = new FBUser.Builder("<replace-with-your-user-key>")
-              .userName("<replace-with-your-user-name>")
-              .build();
-      String flagKey = "<replace-with-your-flag-key>";
+        FBClient client = new FBClientImp(envSecret, config);
+        if (client.isInitialized()) {
+            // The flag key to be evaluated
+            String flagKey = "use-new-algorithm";
 
-      // evaluate a boolean flag for a given user
-      String flagValue = client.variation(flagKey, user, "default");
-      System.out.printf("flag %s, returns %s for user %s%n", flagKey, flagValue, user.getKey());
+            // The user
+            FBUser user = new FBUser.Builder("bot-id")
+                    .userName("bot")
+                    .build();
 
-      // evaluate a boolean flag for a given user with evaluation detail
-      EvalDetail<String> ed = client.variationDetail(flagKey, user, "default");
-      System.out.println(String.format("flag %s, returns %s for user %s", flagKey, ed.getValue(), user.getKey()));
-      System.out.println(String.format("Reason Description: %s", ed.getReason()));
+            // Evaluate a boolean flag for a given user
+            Boolean flagValue = client.boolVariation(flagKey, user, false);
+            System.out.printf("flag %s, returns %b for user %s%n", flagKey, flagValue, user.getUserName());
+
+            // Evaluate a boolean flag for a given user with evaluation detail
+            EvalDetail<Boolean> ed = client.boolVariationDetail(flagKey, user, false);
+            System.out.printf("flag %s, returns %b for user %s, reason: %s%n", flagKey, ed.getVariation(), user.getUserName(), ed.getReason());
+        }
+
+        // Close the client to ensure that all insights are sent out before the app exits
+        client.close();
+        System.out.println("APP FINISHED");
     }
-
-    // close the client to ensure that all insights are sent out before the app exits
-    client.close();
-    System.out.println("APP FINISHED");
-  }
 }
 ```
-
-Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required to initialize the SDK.
 
 ### Examples
 
@@ -102,12 +106,7 @@ Applications SHOULD instantiate a single FBClient instance for the lifetime of t
 needs to evaluate feature flags from different environments, you may create multiple clients, but they should still be
 retained for the lifetime of the application rather than created per request or per thread.
 
-### Bootstrapping
-
-The bootstrapping is in fact the call of constructor of `FBClientImp`, in which the SDK will be initialized, using
-streaming from your feature management platform.
-
-The constructor will return when it successfully connects, or when the timeout set
+The FBClientImp constructor will return when it successfully connects, or when the timeout set
 by `FBConfig.Builder#startWaitTime(Duration)`
 (default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses,
 you will receive the client in an uninitialized state where feature flags will return default values; it will still
@@ -205,49 +204,6 @@ If Developers would like to know what the implementation is, they can read the j
 The default is `Factory#insightProcessorFactory()`. If Developers would like to know what the implementation is, 
 they can read the javadoc and source code.
 
-### Offline
-In some situations, you might want to stop making remote calls to FeatBit. Here is how:
-
-```java
-FBConfig config = new FBConfig.Builder()
-        .streamingURL(streamUrl)
-        .eventURL(eventUrl)
-        .offline(true)
-        .build();
-
-FBClient client = new FBClientImp(envSecret, config);
-```
-When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
-fallback values because there are no feature flags or segments available. If you want to use your own data source,
-SDK allows users to populate feature flags and segments data from a JSON string. Here is an example: [fbclient_test_data.json](src/test/resources/fbclient_test_data.json).
-
-The format of the data in flags and segments is defined by FeatBit and is subject to change. Rather than trying to
-construct these objects yourself, it's simpler to request existing flags directly from the FeatBit server in JSON format
-and use this output as the starting point for your file. Here's how:
-
-```shell
-# replace http://localhost:5100 with your evaluation server url
-curl -H "Authorization: <your-env-secret>" http://localhost:5100/api/public/sdk/server/latest-all > featbit-bootstrap.json
-```
-
-Then, you can use this file to initialize the SDK:
-
-```java
-FBConfig config = new FBConfig.Builder()
-        .streamingURL(streamUrl)
-        .eventURL(eventUrl)
-        .offline(true)
-        .build();
-
-FBClient client = new FBClientImp(envSecret, config);
-
-// init from json string in offline mode
-String json = Resources.toString(Resources.getResource("featbit-bootstrap.json"), Charsets.UTF_8);
-if(client.initFromJsonFile(json)){
-    // do whatever is appropriate
-}
-```
-
 ### FBUser
 
 A collection of attributes that can affect flag evaluation, usually corresponding to a user of your application.
@@ -311,6 +267,49 @@ String value = client.variation("flag key", user, "Not Found");
 AllFlagStates states = client.getAllLatestFlagsVariations(user);
 EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
 String value = states.getString("flag key", user, "Not Found");
+```
+
+### Offline
+In some situations, you might want to stop making remote calls to FeatBit. Here is how:
+
+```java
+FBConfig config = new FBConfig.Builder()
+        .streamingURL(streamUrl)
+        .eventURL(eventUrl)
+        .offline(true)
+        .build();
+
+FBClient client = new FBClientImp(envSecret, config);
+```
+When you put the SDK in offline mode, no insight message is sent to the server and all feature flag evaluations return
+fallback values because there are no feature flags or segments available. If you want to use your own data source,
+SDK allows users to populate feature flags and segments data from a JSON string. Here is an example: [fbclient_test_data.json](src/test/resources/fbclient_test_data.json).
+
+The format of the data in flags and segments is defined by FeatBit and is subject to change. Rather than trying to
+construct these objects yourself, it's simpler to request existing flags directly from the FeatBit server in JSON format
+and use this output as the starting point for your file. Here's how:
+
+```shell
+# replace http://localhost:5100 with your evaluation server url
+curl -H "Authorization: <your-env-secret>" http://localhost:5100/api/public/sdk/server/latest-all > featbit-bootstrap.json
+```
+
+Then, you can use this file to initialize the SDK:
+
+```java
+FBConfig config = new FBConfig.Builder()
+        .streamingURL(streamUrl)
+        .eventURL(eventUrl)
+        .offline(true)
+        .build();
+
+FBClient client = new FBClientImp(envSecret, config);
+
+// init from json string in offline mode
+String json = Resources.toString(Resources.getResource("featbit-bootstrap.json"), Charsets.UTF_8);
+if(client.initFromJsonFile(json)){
+    // do whatever is appropriate
+}
 ```
 
 ### Experiments (A/B/n Testing)
