@@ -106,13 +106,13 @@ final class Streaming implements DataSynchronizer {
     public boolean isInitialized() {
         boolean storageInit = updater.storageInitialized();
         boolean streamingInit = initialized.get();
-        if(!storageInit){
-            logger.warn("FB JAVA SDK: data storage is empty");
+        if (!storageInit) {
+            logger.debug("data storage is empty");
         }
-        if(!streamingInit){
-            logger.warn("FB JAVA SDK: streaming is not yet initialized");
+        if (!streamingInit) {
+            logger.debug("streaming is not yet initialized");
         }
-        return  storageInit && streamingInit;
+        return storageInit && streamingInit;
     }
 
     @Override
@@ -200,12 +200,14 @@ final class Streaming implements DataSynchronizer {
                         .stream()
                         .allMatch(pair -> updater.upsert(pair.getLeft(), pair.getRight().getId(), pair.getRight(), pair.getRight().getTimestamp()));
             }
-            // if the storage is not yet initialized, keep the streaming in initializing state.
-            if (opOK && updater.storageInitialized()) {
-                logger.debug("processing data is well done");
-                updater.updateStatus(Status.State.OKState());
+            if (opOK) {
                 if (initialized.compareAndSet(false, true)) {
                     initFuture.complete(true);
+                }
+                if (updater.storageInitialized()) {
+                    // if the storage is not yet initialized, keep the streaming in initializing state.
+                    logger.debug("processing data is well done");
+                    updater.updateStatus(Status.State.OKState());
                 }
             }
             return opOK;

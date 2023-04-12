@@ -131,14 +131,15 @@ public final class FBClientImp implements FBClient {
                 boolean initResult = initFuture.get(startWait.toMillis(), TimeUnit.MILLISECONDS);
                 if (initResult && !offline) {
                     logger.info("FB JAVA SDK: SDK initialization is completed");
+                    if (!this.dataSynchronizer.isInitialized()) {
+                        logger.warn("FB JAVA SDK: SDK was not completely initialized because of no data found in your environment");
+                    }
                 }
             } catch (TimeoutException e) {
                 logger.error("FB JAVA SDK: timeout encountered when waiting for data update");
+                logger.warn("FB JAVA SDK: SDK was not successfully initialized");
             } catch (Exception e) {
                 logger.error("FB JAVA SDK: exception encountered when waiting for data update", e);
-            }
-
-            if (!this.dataSynchronizer.isInitialized() && !offline) {
                 logger.warn("FB JAVA SDK: SDK was not successfully initialized");
             }
         } else {
