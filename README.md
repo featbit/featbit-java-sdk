@@ -26,7 +26,6 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
 - Install the SDK using Maven
 
 ```xml
-
 <dependencies>
     <!-- https://mvnrepository.com/artifact/co.featbit/featbit-java-sdk -->
     <dependency>
