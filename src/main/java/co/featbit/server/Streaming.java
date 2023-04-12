@@ -200,7 +200,8 @@ final class Streaming implements DataSynchronizer {
                         .stream()
                         .allMatch(pair -> updater.upsert(pair.getLeft(), pair.getRight().getId(), pair.getRight(), pair.getRight().getTimestamp()));
             }
-            if (opOK) {
+            // if the storage is not yet initialized, keep the streaming in initializing state.
+            if (opOK && updater.storageInitialized()) {
                 logger.debug("processing data is well done");
                 updater.updateStatus(Status.State.OKState());
                 if (initialized.compareAndSet(false, true)) {
