@@ -279,12 +279,11 @@ public abstract class Status {
         @Override
         public boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
             try {
-                storage.init(allData, version);
+                return storage.init(allData, version);
             } catch (Exception ex) {
                 handleErrorFromStorage(ex, ErrorTrack.of(DATA_STORAGE_INIT_ERROR, ex.getMessage()));
                 return false;
             }
-            return true;
         }
 
         @Override

@@ -25,9 +25,9 @@ final class InMemoryDataStorage implements DataStorage {
     }
 
     @Override
-    public void init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
+    public boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
         if (version == null || this.version >= version || allData == null || allData.isEmpty()) {
-            return;
+            return false;
         }
 
         rwLock.writeLock().lock();
@@ -39,7 +39,7 @@ final class InMemoryDataStorage implements DataStorage {
         } finally {
             rwLock.writeLock().unlock();
         }
-
+        return true;
     }
 
     @Override

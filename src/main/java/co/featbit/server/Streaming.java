@@ -104,7 +104,15 @@ final class Streaming implements DataSynchronizer {
 
     @Override
     public boolean isInitialized() {
-        return updater.storageInitialized() && initialized.get();
+        boolean storageInit = updater.storageInitialized();
+        boolean streamingInit = initialized.get();
+        if(!storageInit){
+            logger.warn("FB JAVA SDK: data storage is empty");
+        }
+        if(!streamingInit){
+            logger.warn("FB JAVA SDK: streaming is not yet initialized");
+        }
+        return  storageInit && streamingInit;
     }
 
     @Override

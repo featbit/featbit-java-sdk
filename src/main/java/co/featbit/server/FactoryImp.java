@@ -69,8 +69,8 @@ abstract class FactoryImp {
         static final NullDataStorage SINGLETON = new NullDataStorage();
 
         @Override
-        public void init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
-
+        public boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
+            return true;
         }
 
         @Override

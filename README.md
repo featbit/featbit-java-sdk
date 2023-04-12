@@ -110,7 +110,10 @@ by `FBConfig.Builder#startWaitTime(Duration)`
 (default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses,
 you will receive the client in an uninitialized state where feature flags will return default values; it will still
 continue trying to connect in the background unless there has been an `java.net.ProtocolException` or you close the
-client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`.
+client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`. 
+
+If `isInitialized()` returns `true`, you can use the client as normal. If it returns `false`, **_maybe SDK is not yet initialized
+or no feature flag has been set in your environment_**.
 
 ```java
 FBConfig config = new FBConfig.Builder()
@@ -142,6 +145,8 @@ if (inited) {
     // do whatever is appropriate
 }
 ```
+
+
 
 ### FBConfig and Components
 

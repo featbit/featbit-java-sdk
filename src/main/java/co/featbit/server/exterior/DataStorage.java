@@ -19,7 +19,7 @@ public interface DataStorage extends Closeable {
      * @param allData map of {@link DataStorageTypes.Category} and their data set {@link DataStorageTypes.Item}
      * @param version the version of dataset, Ordinarily it's a timestamp.
      */
-    void init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version);
+    boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version);
 
     /**
      * Retrieves an item from the specified collection, if available.

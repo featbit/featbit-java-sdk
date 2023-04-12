@@ -20,7 +20,7 @@ public interface FBClient extends Closeable {
     /**
      * Tests whether the client is ready to be used.
      *
-     * @return true if the client is ready, or false if it is still initializing
+     * @return true if the client is ready, or false if it is still initializing/data storage is empty.
      */
     boolean isInitialized();
 
