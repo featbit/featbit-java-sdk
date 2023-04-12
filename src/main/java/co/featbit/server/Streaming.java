@@ -104,7 +104,15 @@ final class Streaming implements DataSynchronizer {
 
     @Override
     public boolean isInitialized() {
-        return updater.storageInitialized() && initialized.get();
+        boolean storageInit = updater.storageInitialized();
+        boolean streamingInit = initialized.get();
+        if (!storageInit) {
+            logger.debug("data storage is empty");
+        }
+        if (!streamingInit) {
+            logger.debug("streaming is not yet initialized");
+        }
+        return storageInit && streamingInit;
     }
 
     @Override
@@ -193,10 +201,13 @@ final class Streaming implements DataSynchronizer {
                         .allMatch(pair -> updater.upsert(pair.getLeft(), pair.getRight().getId(), pair.getRight(), pair.getRight().getTimestamp()));
             }
             if (opOK) {
-                logger.debug("processing data is well done");
-                updater.updateStatus(Status.State.OKState());
                 if (initialized.compareAndSet(false, true)) {
                     initFuture.complete(true);
+                }
+                if (updater.storageInitialized()) {
+                    // if the storage is not yet initialized, keep the streaming in initializing state.
+                    logger.debug("processing data is well done");
+                    updater.updateStatus(Status.State.OKState());
                 }
             }
             return opOK;
@@ -211,7 +222,7 @@ final class Streaming implements DataSynchronizer {
                 isReconn = true;
                 message = StringUtils.isEmpty(reason) ? "unexpected close" : reason;
             }
-            logger.debug("Streaming WebSocket close reason: {}", message);
+            logger.info("Streaming WebSocket close reason: {}", message);
             if (isReconn && code != GOING_AWAY_CLOSE) {
                 // if code is not 1001, it's an unknown close code received by server
                 updater.updateStatus(Status.State.interruptedState(UNKNOWN_CLOSE_CODE, message));

@@ -279,6 +279,7 @@ public abstract class Status {
         @Override
         public boolean init(Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData, Long version) {
             try {
+                // if storage is empty, synchronized data in using upsert method
                 storage.init(allData, version);
             } catch (Exception ex) {
                 handleErrorFromStorage(ex, ErrorTrack.of(DATA_STORAGE_INIT_ERROR, ex.getMessage()));

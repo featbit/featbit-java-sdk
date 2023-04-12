@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InMemoryDataStorageTest {
     private DataStorage dataStorage;
 
-    private DataStorageTypes.Item item1 = new TestDataModel.TestItem(false, "test item 1");
+    private final DataStorageTypes.Item item1 = new TestDataModel.TestItem(false, "test item 1");
     private final DataStorageTypes.Item item2 = new TestDataModel.TestItem(false, "test item 2");
     private final DataStorageTypes.Item archivedItem = new TestDataModel.TestItem(true, "test archive item");
 
@@ -36,7 +36,7 @@ class InMemoryDataStorageTest {
     void testInit() {
         Map<String, DataStorageTypes.Item> items = ImmutableMap.of(item1.getId(), item1, archivedItem.getId(), archivedItem);
         Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData = ImmutableMap.of(DATATESTS, items);
-        dataStorage.init(allData, 1L);
+        assertTrue(dataStorage.init(allData, 1L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(1L, dataStorage.getVersion());
         assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
@@ -46,23 +46,23 @@ class InMemoryDataStorageTest {
 
     @Test
     void testInvalidInit() {
-        dataStorage.init(null, 1L);
+        assertFalse(dataStorage.init(null, 1L));
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
         Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData = ImmutableMap.of();
-        dataStorage.init(allData, 1L);
+        assertFalse(dataStorage.init(allData, 1L));
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
         Map<String, DataStorageTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
         allData = ImmutableMap.of(DATATESTS, items);
-        dataStorage.init(allData, null);
+        assertFalse(dataStorage.init(allData, null));
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
-        dataStorage.init(allData, -1L);
+        assertFalse(dataStorage.init(allData, -1L));
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
 
-        dataStorage.init(allData, 1L);
+        assertTrue(dataStorage.init(allData, 1L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(1L, dataStorage.getVersion());
         items = ImmutableMap.of(item1.getId(), item1, item2.getId(), item2);
@@ -85,19 +85,19 @@ class InMemoryDataStorageTest {
 
     @Test
     void testUpsert() {
-        dataStorage.upsert(DATATESTS, item1.getId(), item1, 1L);
+        assertTrue(dataStorage.upsert(DATATESTS, item1.getId(), item1, 1L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(1L, dataStorage.getVersion());
         assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
-        dataStorage.upsert(DATATESTS, item2.getId(), item2, 2L);
+        assertTrue(dataStorage.upsert(DATATESTS, item2.getId(), item2, 2L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(2L, dataStorage.getVersion());
         assertEquals(item2, dataStorage.get(DATATESTS, item2.getId()));
-        item1 = new TestDataModel.TestItem(item1.getId(), false, "updated test item 1");
-        dataStorage.upsert(DATATESTS, item1.getId(), item1, 3L);
+        TestDataModel.TestItem item3 = new TestDataModel.TestItem(item1.getId(), false, "updated test item 1");
+        assertTrue(dataStorage.upsert(DATATESTS, item3.getId(), item3, 3L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(3L, dataStorage.getVersion());
-        assertEquals(item1, dataStorage.get(DATATESTS, item1.getId()));
+        assertEquals(item3, dataStorage.get(DATATESTS, item3.getId()));
     }
 
     @Test
@@ -112,7 +112,7 @@ class InMemoryDataStorageTest {
         assertEquals(0L, dataStorage.getVersion());
         assertFalse(dataStorage.isInitialized());
 
-        dataStorage.upsert(DATATESTS, item1.getId(), item1, 1L);
+        assertTrue(dataStorage.upsert(DATATESTS, item1.getId(), item1, 1L));
         assertTrue(dataStorage.isInitialized());
         assertEquals(1L, dataStorage.getVersion());
         assertFalse(dataStorage.upsert(DATATESTS, item2.getId(), item2, 1L));
