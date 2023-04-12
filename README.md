@@ -101,11 +101,12 @@ class Main {
 
 ### FBClient
 
-Applications SHOULD instantiate a single FBClient instance for the lifetime of the application. In the case where an application
+Applications **SHOULD instantiate a single FBClient instance** for the lifetime of the application. In the case where an application
 needs to evaluate feature flags from different environments, you may create multiple clients, but they should still be
 retained for the lifetime of the application rather than created per request or per thread.
 
-The FBClientImp constructor will return when it successfully connects, or when the timeout set
+#### Boostrapping
+The `FBClientImp` constructor will return when it successfully connects, or when the timeout set
 by `FBConfig.Builder#startWaitTime(Duration)`
 (default: 15 seconds) expires, whichever comes first. If it has not succeeded in connecting when the timeout elapses,
 you will receive the client in an uninitialized state where feature flags will return default values; it will still
@@ -228,7 +229,7 @@ SDK calculates the value of a feature flag for a given user, and returns a flag 
 that the value was determined.
 
 SDK will initialize all the related data(feature flags, segments etc.) in the bootstrapping and receive the data updates
-in real time, as mentioned in [Bootstrapping](#bootstrapping).
+in real time, as mentioned in [Bootstrapping](#boostrapping).
 
 After initialization, the SDK has all the feature flags in the memory and all evaluation is done _**locally and
 synchronously**_, the average evaluation time is < _**10**_ ms.
