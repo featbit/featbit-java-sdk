@@ -114,7 +114,9 @@ continue trying to connect in the background unless there has been an `java.net.
 client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`. 
 
 If `isInitialized()` returns `true`, you can use the client as normal. If it returns `false`, **_maybe SDK is not yet initialized
-or no feature flag has been set in your environment_**.
+or no feature flag has been set in your environment_**. 
+
+`isInitialized()` is optional, but it is recommended that you use it to avoid to get default values when the SDK is not yet initialized.
 
 ```java
 FBConfig config = new FBConfig.Builder()
@@ -146,7 +148,7 @@ if (inited) {
     // do whatever is appropriate
 }
 ```
-
+It's optional to wait for initialization to finish, but it is recommended that you do that to avoid to get default values when the SDK is not yet initialized.
 
 
 ### FBConfig and Components
