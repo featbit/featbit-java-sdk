@@ -15,7 +15,7 @@ default. Whenever there is any change to a feature flag or its related data, thi
 the average synchronization time is less than 100 ms. Be aware the websocket connection may be interrupted due to
 internet outage, but it will be resumed automatically once the problem is gone.
 
-If you want to use your own data source, see [Offline](#offline).
+If you want to use your own data source, see [Offline Mode](#offline-mode).
 
 ## Get Started
 
@@ -273,7 +273,7 @@ EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found"
 String value = states.getString("flag key", user, "Not Found");
 ```
 
-### Offline
+### Offline Mode
 In some situations, you might want to stop making remote calls to FeatBit. Here is how:
 
 ```java
@@ -333,7 +333,7 @@ Make sure `trackMetric` is called after the related feature flag is called, othe
 - If you have a specific question about using this sdk, we encourage you
   to [ask it in our slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
 - If you encounter a bug or would like to request a
-  feature, [submit an issue](https://github.com/featbit/dotnet-server-sdk/issues/new).
+  feature, [submit an issue](https://github.com/featbit/featbit-java-sdk/issues/new).
 
 ## See Also
 
