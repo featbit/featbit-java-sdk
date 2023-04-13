@@ -127,7 +127,7 @@ FBConfig config = new FBConfig.Builder()
 
 FBClient client = new FBClientImp(envSecret, config);
 if(client.isInitialized()){
-    // do whatever is appropriate
+    // the client is ready
 }
 ```
 
@@ -145,7 +145,7 @@ FBClient client = new FBClientImp(sdkKey, config);
 // later, when you want to wait for initialization to finish:
 boolean inited = client.getDataUpdateStatusProvider().waitForOKState(Duration.ofSeconds(10))
 if (inited) {
-    // do whatever is appropriate
+    // the client is ready
 }
 ```
 It's optional to wait for initialization to finish, but it is recommended that you do that to avoid to get default values when the SDK is not yet initialized.
@@ -315,7 +315,7 @@ FBClient client = new FBClientImp(envSecret, config);
 // init from json string in offline mode
 String json = Resources.toString(Resources.getResource("featbit-bootstrap.json"), Charsets.UTF_8);
 if(client.initFromJsonFile(json)){
-    // do whatever is appropriate
+    // the client is ready
 }
 ```
 
