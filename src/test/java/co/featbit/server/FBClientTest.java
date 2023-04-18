@@ -202,7 +202,7 @@ class FBClientTest extends FBClientBaseTest {
     @Test
     void testVariationWhenClientNotInitialized() throws Exception {
         expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andReturn(false);
+        expect(initFuture.get(anyLong(), anyObject(TimeUnit.class))).andReturn(false);
         expect(dataSynchronizer.isInitialized()).andReturn(false).anyTimes();
         support.replayAll();
         fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));
@@ -215,6 +215,9 @@ class FBClientTest extends FBClientBaseTest {
             AllFlagStates states = client.getAllLatestFlagsVariations(user1);
             assertFalse(states.isSuccess());
             assertEquals(REASON_CLIENT_NOT_READY, states.getReason());
+            ed = states.getBooleanDetail("ff-test-bool", false);
+            assertFalse(ed.getVariation());
+            assertEquals(REASON_FLAG_NOT_FOUND, ed.getReason());
             support.verifyAll();
         }
     }
@@ -223,7 +226,7 @@ class FBClientTest extends FBClientBaseTest {
     void testVariationThrowException() throws Exception {
         expect(dataStorage.get(anyObject(DataStorageTypes.Category.class), anyString())).andThrow(new RuntimeException("test exception"));
         expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andReturn(true);
+        expect(initFuture.get(anyLong(), anyObject(TimeUnit.class))).andReturn(true);
         expect(dataSynchronizer.isInitialized()).andReturn(true).anyTimes();
         support.replayAll();
         fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));
@@ -284,33 +287,23 @@ class FBClientTest extends FBClientBaseTest {
 
     @Test
     void testConstructStartWait() throws Exception {
-        expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andReturn(true);
-        expect(dataSynchronizer.isInitialized()).andReturn(true).anyTimes();
-        support.replayAll();
-        fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));
-        try (FBClient client = createMockClient(fakeConfigBuilder)) {
+        try (FBClient client = initClientWithNullComponents(Duration.ofMillis(10))) {
             assertTrue(client.isInitialized());
-            support.verifyAll();
         }
     }
 
     @Test
-    void testConstructStartNoWait() throws IOException {
-        expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(dataSynchronizer.isInitialized()).andReturn(false).anyTimes();
-        support.replayAll();
-        fakeConfigBuilder.startWaitTime(Duration.ZERO);
-        try (FBClient client = createMockClient(fakeConfigBuilder)) {
-            assertFalse(client.isInitialized());
-            support.verifyAll();
+    void testConstructStartNoWait() throws Exception {
+        try (FBClient client = initClientWithNullComponents(Duration.ZERO)) {
+            assertTrue(client.getDataUpdateStatusProvider().waitForOKState(Duration.ofMillis(10)));
+            assertTrue(client.isInitialized());
         }
     }
 
     @Test
     void testConstructStartThrowTimeoutException() throws Exception {
         expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andThrow(new TimeoutException("test exception"));
+        expect(initFuture.get(anyLong(), anyObject(TimeUnit.class))).andThrow(new TimeoutException("test exception"));
         expect(dataSynchronizer.isInitialized()).andReturn(false).anyTimes();
         support.replayAll();
         fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));
@@ -323,7 +316,7 @@ class FBClientTest extends FBClientBaseTest {
     @Test
     void testConstructStartThrowException() throws Exception {
         expect(dataSynchronizer.start()).andReturn(initFuture);
-        expect(initFuture.get(10L, TimeUnit.MILLISECONDS)).andThrow(new InterruptedException("test exception"));
+        expect(initFuture.get(anyLong(), anyObject(TimeUnit.class))).andThrow(new InterruptedException("test exception"));
         expect(dataSynchronizer.isInitialized()).andReturn(false).anyTimes();
         support.replayAll();
         fakeConfigBuilder.startWaitTime(Duration.ofMillis(10));

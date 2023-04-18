@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Base64;
 
 public abstract class FBClientBaseTest {
@@ -20,6 +21,18 @@ public abstract class FBClientBaseTest {
                 .build();
         FBClientImp client = new FBClientImp("env-secret", config);
         client.initializeFromExternalJson(readResource("fbclient_test_data.json"));
+        return client;
+    }
+
+    protected FBClientImp initClientWithNullComponents(Duration duration) {
+        FBConfig config = new FBConfig.Builder()
+                .startWaitTime(duration)
+                .streamingURL("ws://fake-url")
+                .eventURL("http://fake-url")
+                .dataSynchronizerFactory(Factory.externalDataSynchronization())
+                .insightProcessorFactory(Factory.externalEventTrack())
+                .build();
+        FBClientImp client = new FBClientImp("env-secret", config);
         return client;
     }
 

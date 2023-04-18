@@ -113,10 +113,8 @@ you will receive the client in an uninitialized state where feature flags will r
 continue trying to connect in the background unless there has been an `java.net.ProtocolException` or you close the
 client(using `close()`). You can detect whether initialization has succeeded by calling `isInitialized()`. 
 
-If `isInitialized()` returns `true`, you can use the client as normal. If it returns `false`, **_maybe SDK is not yet initialized
-or no feature flag has been set in your environment_**. 
-
-`isInitialized()` is optional, but it is recommended that you use it to avoid to get default values when the SDK is not yet initialized.
+If `isInitialized()` returns True, it means SDK has succeeded at some point in connecting to feature flag center,
+otherwise client has not yet connected to feature flag center, or has permanently failed. In this state, feature flag evaluations will always return default values.
 
 ```java
 FBConfig config = new FBConfig.Builder()
@@ -148,7 +146,10 @@ if (inited) {
     // the client is ready
 }
 ```
-It's optional to wait for initialization to finish, but it is recommended that you do that to avoid to get default values when the SDK is not yet initialized.
+
+`waitForOKState` method that will block until the client has successfully connected, or until the timeout expires.
+
+> To check if the client is ready is optional. Even if the client is not ready, you can still evaluate feature flags, but the default value will be returned if SDK is not yet initialized.
 
 
 ### FBConfig and Components
@@ -236,9 +237,6 @@ in real time, as mentioned in [Bootstrapping](#boostrapping).
 After initialization, the SDK has all the feature flags in the memory and all evaluation is done _**locally and
 synchronously**_, the average evaluation time is < _**10**_ ms.
 
-If evaluation called before Java SDK client initialized, or you set the wrong flag key or user for the evaluation, SDK will return
-the default value you set.
-
 There is a `variation` method that returns a flag value, and a `variationDetail` method that returns an object
 describing how the value was determined for each type.
 
@@ -275,6 +273,9 @@ AllFlagStates states = client.getAllLatestFlagsVariations(user);
 EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
 String value = states.getString("flag key", user, "Not Found");
 ```
+
+> If evaluation called before Java SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag
+is not found SDK will return the default value you set. `EvalDetail` will explain the details of the latest evaluation including error raison.
 
 ### Offline Mode
 In some situations, you might want to stop making remote calls to FeatBit. Here is how:
@@ -329,15 +330,3 @@ client.trackMetric(user, eventName, numericValue);
 **numericValue** is not mandatory, the default value is **1**.
 
 Make sure `trackMetric` is called after the related feature flag is called, otherwise the custom event won't be included into the experiment result.
-
-
-## Getting support
-
-- If you have a specific question about using this sdk, we encourage you
-  to [ask it in our slack](https://join.slack.com/t/featbit/shared_invite/zt-1ew5e2vbb-x6Apan1xZOaYMnFzqZkGNQ).
-- If you encounter a bug or would like to request a
-  feature, [submit an issue](https://github.com/featbit/featbit-java-sdk/issues/new).
-
-## See Also
-
-- [Connect To Java Sdk](https://docs.featbit.co/docs/getting-started/4.-connect-an-sdk/server-side-sdks/java-sdk)
