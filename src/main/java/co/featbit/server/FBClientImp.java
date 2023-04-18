@@ -125,22 +125,18 @@ public final class FBClientImp implements FBClient {
                 if (!(config.getDataSynchronizerFactory() instanceof FactoryImp.NullDataSynchronizerFactory)) {
                     logger.info("FB JAVA SDK: waiting for Client initialization in {} milliseconds", startWait.toMillis());
                 }
-                if (config.getDataStorageFactory() instanceof FactoryImp.NullDataStorageFactory) {
-                    logger.info("FB JAVA SDK: SDK just returns default variation");
+                if (config.getDataStorageFactory() instanceof FactoryImp.NullDataStorageFactory
+                        || (!dataUpdater.storageInitialized() && !offline)) {
+                    logger.info("SDK just returns default variation because of no data found in the given environment");
                 }
                 boolean initResult = initFuture.get(startWait.toMillis(), TimeUnit.MILLISECONDS);
-                if (initResult && !offline) {
-                    logger.info("FB JAVA SDK: SDK initialization is completed");
-                    if (!this.dataSynchronizer.isInitialized()) {
-                        logger.warn("FB JAVA SDK: SDK was not completely initialized because of no data found in your environment");
-                    }
+                if (!initResult) {
+                    logger.warn("FB JAVA SDK: SDK was not successfully initialized");
                 }
             } catch (TimeoutException e) {
                 logger.error("FB JAVA SDK: timeout encountered when waiting for data update");
-                logger.warn("FB JAVA SDK: SDK was not successfully initialized");
             } catch (Exception e) {
                 logger.error("FB JAVA SDK: exception encountered when waiting for data update", e);
-                logger.warn("FB JAVA SDK: SDK was not successfully initialized");
             }
         } else {
             logger.info("FB JAVA SDK: SDK starts in asynchronous mode");
@@ -293,10 +289,6 @@ public final class FBClientImp implements FBClient {
         this.insightProcessor.close();
     }
 
-    public boolean isOffline() {
-        return offline;
-    }
-
     @Override
     public Status.DataUpdateStatusProvider getDataUpdateStatusProvider() {
         return dataUpdateStatusProvider;
@@ -310,11 +302,7 @@ public final class FBClientImp implements FBClient {
                 DataModel.Data allData = all.data();
                 Long version = allData.getTimestamp();
                 Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allDataInStorageType = allData.toStorageType();
-                boolean res = dataUpdater.init(allDataInStorageType, version);
-                if (res) {
-                    dataUpdater.updateStatus(Status.State.OKState());
-                }
-                return res;
+                return dataUpdater.init(allDataInStorageType, version);
             }
         }
         return false;

@@ -128,12 +128,13 @@ abstract class FactoryImp {
 
         @Override
         public Future<Boolean> start() {
+            dataUpdater.updateStatus(Status.State.OKState());
             return CompletableFuture.completedFuture(Boolean.TRUE);
         }
 
         @Override
         public boolean isInitialized() {
-            return dataUpdater.storageInitialized();
+            return true;
         }
 
         @Override
