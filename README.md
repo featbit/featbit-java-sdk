@@ -41,6 +41,15 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
 implementation 'co.featbit:featbit-java-sdk:1.1.1'
 ```
 
+### Prerequisite
+
+Before using the SDK, you need to obtain the environment secret and SDK URLs. 
+
+Follow the documentation below to retrieve these values
+
+- [How to get the environment secret](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-environment-secret)
+- [How to get the SDK URLs](https://docs.featbit.co/docs/sdk/faq#how-to-get-the-sdk-urls)
+  
 ### Quick Start
 
 > Note that the _**envSecret**_, _**streamUrl**_ and _**eventUrl**_ are required to initialize the SDK.
