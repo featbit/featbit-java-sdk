@@ -361,7 +361,7 @@ public final class FBClientImp implements FBClient {
 
     @Override
     public void trackMetric(FBUser user, String eventName, double metricValue) {
-        if (user == null || StringUtils.isBlank(eventName) || metricValue <= 0) {
+        if (user == null || StringUtils.isBlank(eventName)) {
             Loggers.CLIENT.warn("FB JAVA SDK: event/user/metric invalid");
             return;
         }
@@ -394,7 +394,7 @@ public final class FBClientImp implements FBClient {
         for (Map.Entry<String, Double> entry : metrics.entrySet()) {
             String eventName = entry.getKey();
             Double metricValue = entry.getValue();
-            if (StringUtils.isNotBlank(eventName) && metricValue != null && metricValue > 0D) {
+            if (StringUtils.isNotBlank(eventName) && metricValue != null) {
                 event.add(InsightTypes.Metric.of(eventName, metricValue));
             }
         }
