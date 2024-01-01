@@ -17,6 +17,8 @@ abstract class Loggers {
     static final Logger EVENTS = LoggerFactory.getLogger(EVENTS_LOGGER_NAME);
     private static final String UTILS_LOGGER_NAME = BASE_LOGGER_NAME + ".Utils";
     static final Logger UTILS = LoggerFactory.getLogger(UTILS_LOGGER_NAME);
+    private static final String TEST_LOGGER_NAME = BASE_LOGGER_NAME + ".Test";
+    static final Logger TEST = LoggerFactory.getLogger(TEST_LOGGER_NAME);
 
     Loggers() {
         super();

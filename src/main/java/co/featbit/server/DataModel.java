@@ -6,12 +6,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class DataModel {
 
@@ -344,6 +347,18 @@ public abstract class DataModel {
 
         public String getVariationType() {
             return variationType;
+        }
+
+        Boolean containsSegment(String segmentId) {
+            return getRules().stream()
+                    .flatMap(rule -> rule.getConditions().stream())
+                    .filter(cond -> StringUtils.isBlank(cond.getOp()))
+                    .flatMap(cond -> {
+                        List<String> segments = JsonHelper
+                                .deserialize(cond.getValue(), new TypeToken<List<String>>() {
+                                }.getType());
+                        return segments.stream();
+                    }).collect(Collectors.toList()).contains(segmentId);
         }
 
         @Override

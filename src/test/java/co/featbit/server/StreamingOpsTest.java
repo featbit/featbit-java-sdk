@@ -12,47 +12,38 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static co.featbit.server.Status.DATA_INVALID_ERROR;
-import static co.featbit.server.Status.DATA_STORAGE_INIT_ERROR;
-import static co.featbit.server.Status.NETWORK_ERROR;
-import static co.featbit.server.Status.RUNTIME_ERROR;
-import static co.featbit.server.Status.StateType.INITIALIZING;
-import static co.featbit.server.Status.StateType.INTERRUPTED;
-import static co.featbit.server.Status.StateType.OFF;
-import static co.featbit.server.Status.StateType.OK;
-import static co.featbit.server.Status.UNKNOWN_ERROR;
-import static co.featbit.server.Status.WEBSOCKET_ERROR;
-import static co.featbit.server.Streaming.StreamingOps.isReconnOnClose;
-import static co.featbit.server.Streaming.StreamingOps.isReconnOnFailure;
-import static co.featbit.server.Streaming.StreamingOps.processData;
-import static org.easymock.EasyMock.anyLong;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.getCurrentArguments;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static co.featbit.server.Status.*;
+import static co.featbit.server.Status.StateType.*;
+import static co.featbit.server.Streaming.StreamingOps.*;
+import static org.easymock.EasyMock.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * this class just tests streaming operations, not covers the connection test
  */
 class StreamingOpsTest extends ComponentBaseTest {
     private DataStorage dataStorage;
-
     private Status.DataUpdaterImpl dataUpdaterImpl;
-
     private final EasyMockSupport support = new EasyMockSupport();
-
     private Status.DataUpdater dataUpdaterMock;
+    private final EventBroadcasterImpl<Status.StateListener, Status.State> dataUpdateStateNotifier = EventBroadcasterImpl.forDataUpdateStates(ComponentBaseTest.sharedExcutor, Loggers.TEST);
+    private final EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier = EventBroadcasterImpl.forFlagChangeEvents(ComponentBaseTest.sharedExcutor, Loggers.TEST);
+
+    private Status.DataUpdaterImpl makeInstance() {
+        return new Status.DataUpdaterImpl(dataStorage,
+                dataUpdateStateNotifier,
+                flagChangeEventNotifier);
+    }
 
     @BeforeEach
     void init() {
         dataStorage = new InMemoryDataStorage();
-        dataUpdaterImpl = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdaterImpl = makeInstance();
         dataUpdaterMock = support.createNiceMock(Status.DataUpdater.class);
     }
 
@@ -61,6 +52,14 @@ class StreamingOpsTest extends ComponentBaseTest {
         AtomicBoolean initialized = new AtomicBoolean(false);
         CompletableFuture<Boolean> initFuture = new CompletableFuture<>();
 
+        BlockingQueue<Status.State> states = new LinkedBlockingQueue<>();
+        Status.StateListener listener = states::add;
+        dataUpdateStateNotifier.addListener(listener);
+
+        BlockingQueue<FlagChange.FlagChangeEvent> events = new LinkedBlockingQueue<>();
+        FlagChange.FlagChangeListener listener1 = events::add;
+        flagChangeEventNotifier.addListener(listener1);
+
         DataModel.Data data = loadData();
         assertTrue(processData(dataUpdaterImpl, data, initialized, initFuture));
         assertTrue(initialized.get());
@@ -68,12 +67,27 @@ class StreamingOpsTest extends ComponentBaseTest {
         assertTrue(dataUpdaterImpl.storageInitialized());
         assertEquals(OK, dataUpdaterImpl.getCurrentState().getStateType());
         assertEquals(data.getTimestamp(), dataUpdaterImpl.getVersion());
+        expectStateEvents(states, OK);
+        expectFlagChangeEvents(events, "ff-test-seg",
+                "ff-test-bool", "ff-test-number", "ff-test-string",
+                "ff-test-json", "ff-test-off", "ff-evaluation-test");
+
+        dataUpdateStateNotifier.removeListener(listener);
+        flagChangeEventNotifier.removeListener(listener1);
     }
 
     @Test
     void testProcessPatchData() throws Exception {
         AtomicBoolean initialized = new AtomicBoolean(false);
         CompletableFuture<Boolean> initFuture = new CompletableFuture<>();
+
+        BlockingQueue<Status.State> states = new LinkedBlockingQueue<>();
+        Status.StateListener listener = states::add;
+        dataUpdateStateNotifier.addListener(listener);
+
+        BlockingQueue<FlagChange.FlagChangeEvent> events = new LinkedBlockingQueue<>();
+        FlagChange.FlagChangeListener listener1 = events::add;
+        flagChangeEventNotifier.addListener(listener1);
 
         DataModel.Data data = loadData();
         data.eventType = "patch";
@@ -83,13 +97,20 @@ class StreamingOpsTest extends ComponentBaseTest {
         assertTrue(dataUpdaterImpl.storageInitialized());
         assertEquals(OK, dataUpdaterImpl.getCurrentState().getStateType());
         assertEquals(data.getTimestamp(), dataUpdaterImpl.getVersion());
+        expectStateEvents(states, OK);
+        expectFlagChangeEvents(events, "ff-test-seg",
+                "ff-test-bool", "ff-test-number", "ff-test-string",
+                "ff-test-json", "ff-test-off", "ff-evaluation-test");
+
+        dataUpdateStateNotifier.removeListener(listener);
+        flagChangeEventNotifier.removeListener(listener1);
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void testProcessDataThrowException() throws Exception {
         dataStorage = support.createNiceMock(DataStorage.class);
-        dataUpdaterImpl = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdaterImpl = new Status.DataUpdaterImpl(dataStorage, dataUpdateStateNotifier, flagChangeEventNotifier);
 
         AtomicBoolean initialized = new AtomicBoolean(false);
         CompletableFuture<Boolean> initFuture = new CompletableFuture<>();

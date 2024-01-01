@@ -31,14 +31,14 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
     <dependency>
       <groupId>co.featbit</groupId>
       <artifactId>featbit-java-sdk</artifactId>
-      <version>1.2.0</version>
+      <version>1.3.0</version>
     </dependency>
 </dependencies>
 ```
 
 - Install the SDK using Gradle
 ```
-implementation 'co.featbit:featbit-java-sdk:1.2.0'
+implementation 'co.featbit:featbit-java-sdk:1.3.0'
 ```
 
 ### Prerequisite
@@ -285,6 +285,23 @@ String value = states.getString("flag key", user, "Not Found");
 
 > If evaluation called before Java SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag
 is not found SDK will return the default value you set. `EvalDetail` will explain the details of the latest evaluation including error raison.
+
+### Flag Tracking
+You can register registers a listener to be notified of feature flag changes in general.
+
+Note that a flag value change listener is bound to a specific user and flag key.
+
+The flag value change listener will be notified whenever the SDK receives any change to any feature flag's configuration, or to a user segment that is referenced by a feature flag. 
+To register a flag value change listener, use 'FlagTracker#addFlagValueChangeListener' method.
+
+The flag value change listener just call the `onFlagValueChange` method **_only if_** the flag value changes.
+
+```java
+client.getFlagTracker().addFlagValueChangeListener(flagKey, user, event -> {
+    // do something
+});
+```
+
 
 ### Offline Mode
 In some situations, you might want to stop making remote calls to FeatBit. Here is how:
