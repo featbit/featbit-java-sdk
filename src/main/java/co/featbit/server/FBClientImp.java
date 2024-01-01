@@ -13,9 +13,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static co.featbit.server.Evaluator.*;
@@ -36,7 +34,11 @@ public final class FBClientImp implements FBClient {
     private final Status.DataUpdater dataUpdater;
     private final InsightProcessor insightProcessor;
 
+    private final ExecutorService sharedExecutorService;
+
     private final Consumer<InsightTypes.Event> eventHandler;
+
+    private final FlagTracker flagTracker;
 
     /**
      * Creates a new client to connect to feature flag center with a specified configuration.
@@ -109,13 +111,18 @@ public final class FBClientImp implements FBClient {
             return item == null ? null : (DataModel.Segment) item;
         };
         this.evaluator = new EvaluatorImp(flagGetter, segmentGetter);
+
+        this.sharedExecutorService = new ScheduledThreadPoolExecutor(1, Utils.createThreadFactory("featbit-shared-worker-%d", true));
+        EventBroadcasterImpl<Status.StateListener, Status.State> dataUpdateStateNotifier = EventBroadcasterImpl.forDataUpdateStates(this.sharedExecutorService, logger);
+        EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier = EventBroadcasterImpl.forFlagChangeEvents(this.sharedExecutorService, logger);
+        this.flagTracker = new FlagTrackerImpl(flagChangeEventNotifier, (key, user) -> variation(key, user, null));
         //data updator
-        Status.DataUpdaterImpl dataUpdatorImpl = new Status.DataUpdaterImpl(this.storage);
+        Status.DataUpdaterImpl dataUpdatorImpl = new Status.DataUpdaterImpl(this.storage, dataUpdateStateNotifier, flagChangeEventNotifier);
         this.dataUpdater = dataUpdatorImpl;
         //data processor
         this.dataSynchronizer = config.getDataSynchronizerFactory().createDataSynchronizer(context, dataUpdatorImpl);
         //data update status provider
-        this.dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdatorImpl);
+        this.dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdatorImpl, dataUpdateStateNotifier);
 
         // data sync
         Duration startWait = config.getStartWaitTime();
@@ -287,6 +294,12 @@ public final class FBClientImp implements FBClient {
         this.storage.close();
         this.dataSynchronizer.close();
         this.insightProcessor.close();
+        this.sharedExecutorService.shutdownNow();
+    }
+
+    @Override
+    public FlagTracker getFlagTracker() {
+        return this.flagTracker;
     }
 
     @Override

@@ -4,6 +4,7 @@ import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -22,6 +23,8 @@ public abstract class Status {
     public static final String UNKNOWN_ERROR = "Unknown error";
     public static final String UNKNOWN_CLOSE_CODE = "Unknown close code";
     public static final String WEBSOCKET_ERROR = "WebSocket error";
+
+    static final String BROADCASTING_IGNORED_FLAG_KEYS = "broacasting_ingnored_flag_keys";
 
     /**
      * possible values for {@link DataSynchronizer}
@@ -183,6 +186,17 @@ public abstract class Status {
      * and maintain the processor status in your own code, but note that the implementation of this interface is not public
      */
     public interface DataUpdater {
+
+        /**
+         * Retrieves all items from the specified collection.
+         * <p>
+         * If the store contains placeholders for deleted items, it should filter them in the results.
+         *
+         * @param category specifies which collection to use
+         * @return a map of ids and their versioned items
+         */
+        Map<String, DataStorageTypes.Item> getAll(DataStorageTypes.Category category);
+
         /**
          * Overwrites the storage with a set of items for each collection, if the new version > the old one
          * <p>
@@ -245,6 +259,14 @@ public abstract class Status {
          */
         boolean storageInitialized();
 
+        /**
+         * get flag change event notifier {@link EventBroadcaster}
+         *
+         * @return EventBroadcaster
+         */
+        EventBroadcaster<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> getFlagChangeEventNotifier();
+
+
     }
 
     /**
@@ -255,25 +277,41 @@ public abstract class Status {
      * This component is thread safe and is basic component usd in bootstrapping.
      */
     static final class DataUpdaterImpl implements DataUpdater {
-
         private final DataStorage storage;
         private volatile State currentState;
         private final Object lockObject = new Object();
 
-        public DataUpdaterImpl(DataStorage storage) {
+        private final EventBroadcasterImpl<StateListener, State> dataUpdateStateNotifier;
+        private final EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier;
+
+        public DataUpdaterImpl(DataStorage storage,
+                               EventBroadcasterImpl<StateListener, State> dataUpdateStateNotifier,
+                               EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier) {
             this.storage = storage;
+            this.dataUpdateStateNotifier = dataUpdateStateNotifier;
+            this.flagChangeEventNotifier = flagChangeEventNotifier;
             this.currentState = State.initializingState();
         }
 
         // just use for test
-        DataUpdaterImpl(DataStorage storage, State state) {
+        DataUpdaterImpl(DataStorage storage,
+                        State state,
+                        EventBroadcasterImpl<StateListener, State> dataUpdateStateNotifier,
+                        EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier) {
             this.storage = storage;
             this.currentState = state;
+            this.dataUpdateStateNotifier = dataUpdateStateNotifier;
+            this.flagChangeEventNotifier = flagChangeEventNotifier;
         }
 
         private void handleErrorFromStorage(Exception ex, ErrorTrack errorTrack) {
             Loggers.DATA_STORAGE.error("FB JAVA SDK: Data Storage error: {}, UpdateProcessor will attempt to receive the data", ex.getMessage());
             updateStatus(State.interruptedState(errorTrack));
+        }
+
+        @Override
+        public Map<String, DataStorageTypes.Item> getAll(DataStorageTypes.Category category) {
+            return storage.getAll(category);
         }
 
         @Override
@@ -290,12 +328,14 @@ public abstract class Status {
 
         @Override
         public boolean upsert(DataStorageTypes.Category category, String key, DataStorageTypes.Item item, Long version) {
+            boolean updated = false;
             try {
-                return storage.upsert(category, key, item, version);
+                updated = storage.upsert(category, key, item, version);
             } catch (Exception ex) {
                 handleErrorFromStorage(ex, ErrorTrack.of(DATA_STORAGE_UPDATE_ERROR, ex.getMessage()));
                 return false;
             }
+            return updated;
         }
 
         @Override
@@ -303,6 +343,9 @@ public abstract class Status {
             if (newState == null) {
                 return;
             }
+
+            State stateToNotify = null;
+
             synchronized (lockObject) {
                 StateType oldStateType = currentState.getStateType();
                 StateType newStateType = newState.getStateType();
@@ -315,8 +358,13 @@ public abstract class Status {
                 if (newStateType != oldStateType || error != null) {
                     Instant stateSince = (newStateType != oldStateType) ? Instant.now() : currentState.getStateSince();
                     currentState = new State(newStateType, stateSince, error);
+                    stateToNotify = currentState;
                     lockObject.notifyAll();
                 }
+            }
+
+            if (stateToNotify != null && dataUpdateStateNotifier.hasListeners()) {
+                dataUpdateStateNotifier.broadcast(stateToNotify);
             }
 
         }
@@ -329,6 +377,11 @@ public abstract class Status {
         @Override
         public boolean storageInitialized() {
             return storage.isInitialized();
+        }
+
+        @Override
+        public EventBroadcaster<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> getFlagChangeEventNotifier() {
+            return this.flagChangeEventNotifier;
         }
 
         // blocking util you get the desired state, time out reaches or thread is interrupted
@@ -429,14 +482,21 @@ public abstract class Status {
          */
         boolean waitForOKState(Duration timeout) throws InterruptedException;
 
+        void addStateListener(StateListener listener);
+
+        void removeStateListener(StateListener listener);
+
     }
 
     static final class DataUpdateStatusProviderImpl implements DataUpdateStatusProvider {
 
         private final DataUpdaterImpl dataUpdater;
 
-        public DataUpdateStatusProviderImpl(DataUpdaterImpl dataUpdater) {
+        private final EventBroadcasterImpl<StateListener, State> dataUpdateStateNotifier;
+
+        public DataUpdateStatusProviderImpl(DataUpdaterImpl dataUpdater, EventBroadcasterImpl<StateListener, State> dataUpdateStateNotifier) {
             this.dataUpdater = dataUpdater;
+            this.dataUpdateStateNotifier = dataUpdateStateNotifier;
         }
 
         @Override
@@ -453,7 +513,28 @@ public abstract class Status {
         public boolean waitForOKState(Duration timeout) throws InterruptedException {
             return waitFor(StateType.OK, timeout);
         }
+
+        @Override
+        public void addStateListener(StateListener listener) {
+            dataUpdateStateNotifier.addListener(listener);
+        }
+
+        @Override
+        public void removeStateListener(StateListener listener) {
+            dataUpdateStateNotifier.removeListener(listener);
+        }
     }
 
+    /**
+     * Interface for receiving data updating state change notifications.
+     */
+    public interface StateListener {
+        /**
+         * Called when the data updating state has changed.
+         *
+         * @param newState the new state
+         */
+        void onStateChange(State newState);
+    }
 
 }

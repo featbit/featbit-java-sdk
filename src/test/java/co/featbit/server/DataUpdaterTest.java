@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static co.featbit.server.Status.DATA_STORAGE_INIT_ERROR;
 import static co.featbit.server.Status.DATA_STORAGE_UPDATE_ERROR;
@@ -28,12 +30,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(EasyMockExtension.class)
-class DataUpdaterTest {
+class DataUpdaterTest extends ComponentBaseTest {
     private DataStorage dataStorage;
     private Status.DataUpdaterImpl dataUpdater;
     private Status.DataUpdateStatusProvider dataUpdateStatusProvider;
     private final EasyMockSupport support = new EasyMockSupport();
     private final DataStorageTypes.Item item1 = new TestDataModel.TestItem(false, "test item 1");
+    private final EventBroadcasterImpl<Status.StateListener, Status.State> dataUpdateStateNotifier = EventBroadcasterImpl.forDataUpdateStates(ComponentBaseTest.sharedExcutor, Loggers.TEST);
+    private final EventBroadcasterImpl<FlagChange.FlagChangeListener, FlagChange.FlagChangeEvent> flagChangeEventNotifier = EventBroadcasterImpl.forFlagChangeEvents(ComponentBaseTest.sharedExcutor, Loggers.TEST);
+
+    private Status.DataUpdaterImpl makeInstance() {
+        return new Status.DataUpdaterImpl(dataStorage, dataUpdateStateNotifier, flagChangeEventNotifier);
+    }
+
+    private Status.DataUpdaterImpl makeInstance(Status.State state) {
+        return new Status.DataUpdaterImpl(dataStorage, state, dataUpdateStateNotifier, flagChangeEventNotifier);
+    }
 
     @AfterEach
     void dispose() {
@@ -45,7 +57,7 @@ class DataUpdaterTest {
     @Test
     void testInitDataStorage() {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdater = makeInstance();
 
         Map<String, DataStorageTypes.Item> items = ImmutableMap.of(item1.getId(), item1);
         Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> allData = ImmutableMap.of(DATATESTS, items);
@@ -58,7 +70,7 @@ class DataUpdaterTest {
     @Test
     void testInitDataStorageThrowException() {
         dataStorage = support.createNiceMock(DataStorage.class);
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdater = makeInstance();
 
         dataStorage.init(anyObject(Map.class), anyLong());
         expectLastCall().andThrow(new RuntimeException("test exception"));
@@ -76,7 +88,7 @@ class DataUpdaterTest {
     @Test
     void testUpsertDataStorage() {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdater = makeInstance();
 
         assertTrue(dataUpdater.upsert(DATATESTS, item1.getId(), item1, 1L));
         assertTrue(dataUpdater.storageInitialized());
@@ -87,7 +99,7 @@ class DataUpdaterTest {
     @Test
     void testUpsertDataStorageThrowException() {
         dataStorage = support.createNiceMock(DataStorage.class);
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage, Status.State.OKState());
+        dataUpdater = makeInstance(Status.State.OKState());
 
         expect(dataStorage.upsert(anyObject(DataStorageTypes.Category.class),
                 anyString(),
@@ -104,11 +116,11 @@ class DataUpdaterTest {
     @Test
     void testUpdateStatus() {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
+        dataUpdater = makeInstance();
         dataUpdater.updateStatus(Status.State.interruptedState("some type", "some reason"));
         assertEquals(INITIALIZING, dataUpdater.getCurrentState().getStateType());
         dataUpdater = null;
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage, Status.State.OKState());
+        dataUpdater = makeInstance(Status.State.OKState());
         dataUpdater.updateStatus(Status.State.interruptedState("some type", "some reason"));
         assertEquals(INTERRUPTED, dataUpdater.getCurrentState().getStateType());
     }
@@ -116,8 +128,8 @@ class DataUpdaterTest {
     @Test
     void waitForStatusIfStatusAlreadyCorrect() throws InterruptedException {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
-        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater);
+        dataUpdater = makeInstance();
+        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater, dataUpdateStateNotifier);
 
         dataUpdater.updateStatus(Status.State.OKState());
         assertTrue(dataUpdateStatusProvider.waitForOKState(Duration.ofMillis(100)));
@@ -129,8 +141,8 @@ class DataUpdaterTest {
     @Test
     void waitForStatusWhenStatusSucceeded() throws InterruptedException {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
-        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater);
+        dataUpdater = makeInstance();
+        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater, dataUpdateStateNotifier);
 
         new Thread(() -> {
             try {
@@ -149,8 +161,8 @@ class DataUpdaterTest {
     @Test
     void waitForStatusTimeOut() throws InterruptedException {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
-        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater);
+        dataUpdater = makeInstance();
+        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater, dataUpdateStateNotifier);
 
         long timeStart = System.currentTimeMillis();
         assertFalse(dataUpdateStatusProvider.waitForOKState(Duration.ofMillis(10)));
@@ -161,8 +173,8 @@ class DataUpdaterTest {
     @Test
     void waitForStatusButStatusOff() throws InterruptedException {
         dataStorage = new InMemoryDataStorage();
-        dataUpdater = new Status.DataUpdaterImpl(dataStorage);
-        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater);
+        dataUpdater = makeInstance();
+        dataUpdateStatusProvider = new Status.DataUpdateStatusProviderImpl(dataUpdater, dataUpdateStateNotifier);
 
         new Thread(() -> {
             try {

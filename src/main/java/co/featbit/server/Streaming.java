@@ -2,19 +2,10 @@ package co.featbit.server;
 
 import co.featbit.commons.json.JsonHelper;
 import co.featbit.commons.json.JsonParseException;
-import co.featbit.server.exterior.BasicConfig;
-import co.featbit.server.exterior.Context;
-import co.featbit.server.exterior.DataStorageTypes;
-import co.featbit.server.exterior.DataSynchronizer;
-import co.featbit.server.exterior.HttpConfig;
+import co.featbit.server.exterior.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.WebSocket;
-import okhttp3.WebSocketListener;
+import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jetbrains.annotations.NotNull;
@@ -26,9 +17,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -39,9 +28,7 @@ import java.util.stream.Collectors;
 
 import static co.featbit.server.Status.REQUEST_INVALID_ERROR;
 import static co.featbit.server.Status.UNKNOWN_CLOSE_CODE;
-import static co.featbit.server.Streaming.StreamingOps.isReconnOnClose;
-import static co.featbit.server.Streaming.StreamingOps.isReconnOnFailure;
-import static co.featbit.server.Streaming.StreamingOps.processData;
+import static co.featbit.server.Streaming.StreamingOps.*;
 
 final class Streaming implements DataSynchronizer {
 
@@ -176,6 +163,34 @@ final class Streaming implements DataSynchronizer {
     }
 
     static final class StreamingOps {
+        private static void broadcast(Status.DataUpdater updater, Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> updatedData) {
+            Set<String> flagKeySet = new HashSet<>();
+            if (updater.getFlagChangeEventNotifier().hasListeners()) {
+                for (Map.Entry<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> entry : updatedData.entrySet()) {
+                    if (DataStorageTypes.FEATURES.equals(entry.getKey())) {
+                        for (String id : entry.getValue().keySet()) {
+                            if (!flagKeySet.contains(id)) {
+                                updater.getFlagChangeEventNotifier().broadcast(new FlagChange.FlagChangeEvent(id));
+                                flagKeySet.add(id);
+                            }
+                        }
+                    } else if (DataStorageTypes.SEGMENTS.equals(entry.getKey())) {
+                        List<DataModel.FeatureFlag> flags = updater.getAll(DataStorageTypes.FEATURES).values().stream()
+                                .map(item -> (DataModel.FeatureFlag) item)
+                                .collect(Collectors.toList());
+                        for (String sig : entry.getValue().keySet()) {
+                            flags.stream()
+                                    .filter(flag -> flag.containsSegment(sig) && !flagKeySet.contains(flag.getId()))
+                                    .forEach(flag -> {
+                                        updater.getFlagChangeEventNotifier().broadcast(new FlagChange.FlagChangeEvent(flag.getId()));
+                                        flagKeySet.add(flag.getId());
+                                    });
+                        }
+                    }
+                }
+            }
+        }
+
         static Boolean processData(Status.DataUpdater updater, DataModel.Data data, AtomicBoolean initialized, CompletableFuture<Boolean> initFuture) {
             boolean opOK = false;
             String eventType = data.getEventType();
@@ -198,6 +213,7 @@ final class Streaming implements DataSynchronizer {
                 }
                 logger.debug("processing data is well done");
                 updater.updateStatus(Status.State.OKState());
+                broadcast(updater, updatedData);
             }
             return opOK;
         }

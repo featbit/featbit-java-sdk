@@ -102,6 +102,13 @@ public interface FBClient extends Closeable {
     boolean isFlagKnown(String featureKey);
 
     /**
+     * Returns an interface for registering listeners that will be notified of changes in feature flag configurations.
+     *
+     * @return a {@link FlagTracker}
+     */
+    FlagTracker getFlagTracker();
+
+    /**
      * Returns an interface for tracking the status of the update processor.
      * <p>
      * The update processor is the mechanism that the SDK uses to get feature flag, such as a
