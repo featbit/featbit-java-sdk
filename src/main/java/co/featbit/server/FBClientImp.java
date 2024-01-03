@@ -169,20 +169,17 @@ public final class FBClientImp implements FBClient {
 
     @Override
     public boolean boolVariation(String featureFlagKey, FBUser user, Boolean defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
         return BooleanUtils.toBoolean(res.getValue());
     }
 
     @Override
     public EvalDetail<Boolean> boolVariationDetail(String featureFlagKey, FBUser user, Boolean defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Boolean.class);
         return res.toEvalDetail(BooleanUtils.toBoolean(res.getValue()));
     }
 
     public double doubleVariation(String featureFlagKey, FBUser user, Double defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
         return Double.parseDouble(res.getValue());
     }
@@ -190,33 +187,28 @@ public final class FBClientImp implements FBClient {
 
     @Override
     public EvalDetail<Double> doubleVariationDetail(String featureFlagKey, FBUser user, Double defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Double.class);
         return res.toEvalDetail(Double.parseDouble(res.getValue()));
     }
 
     public int intVariation(String featureFlagKey, FBUser user, Integer defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
         return Double.valueOf(res.getValue()).intValue();
     }
 
     @Override
     public EvalDetail<Integer> intVariationDetail(String featureFlagKey, FBUser user, Integer defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Integer.class);
         return res.toEvalDetail(Double.valueOf(res.getValue()).intValue());
     }
 
     public long longVariation(String featureFlagKey, FBUser user, Long defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
         return Double.valueOf(res.getValue()).longValue();
     }
 
     @Override
     public EvalDetail<Long> longVariationDetail(String featureFlagKey, FBUser user, Long defaultValue) {
-        checkNotNull(defaultValue, "null defaultValue is invalid");
         Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, defaultValue, Long.class);
         return res.toEvalDetail(Double.valueOf(res.getValue()).longValue());
     }
@@ -235,36 +227,37 @@ public final class FBClientImp implements FBClient {
     }
 
     private Evaluator.EvalResult evaluateInternal(String featureFlagKey, FBUser user, Object defaultValue, Class<?> requiredType) {
+        String dv = defaultValue == null ? null : defaultValue.toString();
         try {
             if (!isInitialized()) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: evaluation is called before Java SDK client is initialized for feature flag, well using the default value");
-                return Evaluator.EvalResult.error(defaultValue.toString(), REASON_CLIENT_NOT_READY, featureFlagKey, FLAG_NAME_UNKNOWN);
+                return Evaluator.EvalResult.error(dv, REASON_CLIENT_NOT_READY, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             if (StringUtils.isBlank(featureFlagKey)) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: null feature flag key; returning default value");
-                return Evaluator.EvalResult.error(defaultValue.toString(), REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
+                return Evaluator.EvalResult.error(dv, REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             DataModel.FeatureFlag flag = getFlagInternal(featureFlagKey);
             if (flag == null) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: unknown feature flag {}; returning default value", featureFlagKey);
-                return Evaluator.EvalResult.error(defaultValue.toString(), REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
+                return Evaluator.EvalResult.error(dv, REASON_FLAG_NOT_FOUND, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
             if (user == null || StringUtils.isBlank(user.getKey())) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: null user for feature flag {}, returning default value", featureFlagKey);
-                return Evaluator.EvalResult.error(defaultValue.toString(), REASON_USER_NOT_SPECIFIED, featureFlagKey, FLAG_NAME_UNKNOWN);
+                return Evaluator.EvalResult.error(dv, REASON_USER_NOT_SPECIFIED, featureFlagKey, FLAG_NAME_UNKNOWN);
             }
 
             InsightTypes.Event event = InsightTypes.FlagEvent.of(user);
             Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
             if (requiredType != null && !Utils.checkType(flag.getVariationType(), requiredType, res.getValue())) {
                 Loggers.EVALUATION.warn("FB JAVA SDK: evaluation result {} didn't matched expected type {}", res.getValue(), requiredType);
-                return Evaluator.EvalResult.error(defaultValue.toString(), REASON_WRONG_TYPE, res.getKeyName(), res.getName());
+                return Evaluator.EvalResult.error(dv, REASON_WRONG_TYPE, res.getKeyName(), res.getName());
             }
             eventHandler.accept(event);
             return res;
         } catch (Exception ex) {
             logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
-            return Evaluator.EvalResult.error(defaultValue.toString(), REASON_ERROR, featureFlagKey, FLAG_NAME_UNKNOWN);
+            return Evaluator.EvalResult.error(dv, REASON_ERROR, featureFlagKey, FLAG_NAME_UNKNOWN);
         }
 
     }
