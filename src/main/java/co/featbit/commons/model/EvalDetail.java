@@ -56,6 +56,10 @@ public final class EvalDetail<T> implements Serializable {
         return new EvalDetail<>(variation, variationIndex, reason, keyName, name);
     }
 
+    public boolean isDefaultVariation() {
+        return variationIndex.equals("-1");
+    }
+
     /**
      * build the method from a json string, this method is only for internal use
      *
