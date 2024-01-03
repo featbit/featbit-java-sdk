@@ -6,10 +6,7 @@ import co.featbit.server.exterior.DataStorageTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static co.featbit.server.Evaluator.REASON_FALLTHROUGH;
-import static co.featbit.server.Evaluator.REASON_FLAG_OFF;
-import static co.featbit.server.Evaluator.REASON_RULE_MATCH;
-import static co.featbit.server.Evaluator.REASON_TARGET_MATCH;
+import static co.featbit.server.Evaluator.*;
 import static co.featbit.server.exterior.DataStorageTypes.FEATURES;
 import static co.featbit.server.exterior.DataStorageTypes.SEGMENTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;

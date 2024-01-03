@@ -11,23 +11,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static co.featbit.server.Status.DATA_STORAGE_INIT_ERROR;
 import static co.featbit.server.Status.DATA_STORAGE_UPDATE_ERROR;
-import static co.featbit.server.Status.StateType.INITIALIZING;
-import static co.featbit.server.Status.StateType.INTERRUPTED;
-import static co.featbit.server.Status.StateType.OFF;
+import static co.featbit.server.Status.StateType.*;
 import static co.featbit.server.exterior.DataStorageTypes.DATATESTS;
-import static org.easymock.EasyMock.anyLong;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.easymock.EasyMock.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(EasyMockExtension.class)
 class DataUpdaterTest extends ComponentBaseTest {

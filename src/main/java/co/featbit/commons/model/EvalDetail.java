@@ -17,6 +17,8 @@ import java.util.Objects;
 public final class EvalDetail<T> implements Serializable {
     private final T variation;
 
+    private final String variationIndex;
+
     private final String reason;
 
     private final String name;
@@ -24,10 +26,12 @@ public final class EvalDetail<T> implements Serializable {
     private final String keyName;
 
     private EvalDetail(T variation,
+                       String variationIndex,
                        String reason,
                        String keyName,
                        String name) {
         this.variation = variation;
+        this.variationIndex = variationIndex;
         this.reason = reason;
         this.keyName = keyName;
         this.name = name;
@@ -36,25 +40,27 @@ public final class EvalDetail<T> implements Serializable {
     /**
      * build method, this method is only for internal use
      *
-     * @param variation the result of flag value
-     * @param reason    main factor that influenced the flag evaluation value
-     * @param keyName   key name of the flag
-     * @param name      name of the flag
-     * @param <T>       String/Boolean/Numeric Type
+     * @param variation      the result of flag value
+     * @param variationIndex the index of variation
+     * @param reason         main factor that influenced the flag evaluation value
+     * @param keyName        key name of the flag
+     * @param name           name of the flag
+     * @param <T>            String/Boolean/Numeric Type
      * @return an EvalDetail
      */
     public static <T> EvalDetail<T> of(T variation,
+                                       String variationIndex,
                                        String reason,
                                        String keyName,
                                        String name) {
-        return new EvalDetail<>(variation, reason, keyName, name);
+        return new EvalDetail<>(variation, variationIndex, reason, keyName, name);
     }
 
     /**
      * build the method from a json string, this method is only for internal use
      *
      * @param json json string of an EvalDetail
-     * @param cls raw type of flag value
+     * @param cls  raw type of flag value
      * @param <T>  String/Boolean/Numeric Type
      * @return an EvalDetail
      */
@@ -109,23 +115,33 @@ public final class EvalDetail<T> implements Serializable {
         return JsonHelper.serialize(this);
     }
 
+    /**
+     * get the index of variation
+     *
+     * @return a string
+     */
+    public String getVariationIndex() {
+        return variationIndex;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         EvalDetail<?> that = (EvalDetail<?>) o;
-        return Objects.equals(variation, that.variation) && Objects.equals(reason, that.reason) && Objects.equals(name, that.name) && Objects.equals(keyName, that.keyName);
+        return Objects.equals(variation, that.variation) && Objects.equals(variationIndex, that.variationIndex) && Objects.equals(reason, that.reason) && Objects.equals(name, that.name) && Objects.equals(keyName, that.keyName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(variation, reason, name, keyName);
+        return Objects.hash(variation, variationIndex, reason, name, keyName);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("variation", variation)
+                .add("variationIndex", variationIndex)
                 .add("reason", reason)
                 .add("name", name)
                 .add("keyName", keyName)

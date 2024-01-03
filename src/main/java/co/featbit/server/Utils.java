@@ -6,26 +6,20 @@ import co.featbit.server.exterior.HttpConfig;
 import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableMap;
-import okhttp3.Authenticator;
-import okhttp3.Cache;
-import okhttp3.Credentials;
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
+import okhttp3.*;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -221,6 +215,10 @@ public abstract class Utils {
             return false;
         }
         return CharMatcher.ascii().matchesAllOf(s);
+    }
+
+    public static String uuidToBigInteger(String uuid) {
+        return new BigInteger(uuid.replaceAll("-", ""), 16).toString();
     }
 
 }
