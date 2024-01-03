@@ -56,6 +56,19 @@ public final class EvalDetail<T> implements Serializable {
         return new EvalDetail<>(variation, variationIndex, reason, keyName, name);
     }
 
+    /**
+     * build an instance from anthor EvalDetail
+     *
+     * @param variation the result of flag value
+     * @param another   another EvalDetail
+     * @param <T>
+     * @param <S>
+     * @return an EvalDetail
+     */
+    public static <T, S> EvalDetail<T> of(T variation, EvalDetail<S> another) {
+        return new EvalDetail<>(variation, another.variationIndex, another.reason, another.keyName, another.name);
+    }
+
     public boolean isDefaultVariation() {
         return variationIndex.equals("-1");
     }
