@@ -33,11 +33,8 @@ public final class FBClientImp implements FBClient {
     private final Status.DataUpdateStatusProvider dataUpdateStatusProvider;
     private final Status.DataUpdater dataUpdater;
     private final InsightProcessor insightProcessor;
-
-    private final ExecutorService sharedExecutorService;
-
+    private final ThreadPoolExecutor sharedExecutorService;
     private final Consumer<InsightTypes.Event> eventHandler;
-
     private final FlagTracker flagTracker;
 
     /**
@@ -287,6 +284,7 @@ public final class FBClientImp implements FBClient {
         this.storage.close();
         this.dataSynchronizer.close();
         this.insightProcessor.close();
+        Utils.shutDownThreadPool("featbit-shared-worker", this.sharedExecutorService, Duration.ofSeconds(2));
         this.sharedExecutorService.shutdownNow();
     }
 
