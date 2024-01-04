@@ -53,7 +53,7 @@ class EventBroadcasterImpl<Listener, Event> implements EventBroadcaster<Listener
             return;
         }
         for (Listener listener : listeners) {
-            if (executor.isShutdown()) {
+            if (executor.isTerminated() || executor.isShutdown()) {
                 _broadcast(listener, event);
             }
             executor.submit(() -> {

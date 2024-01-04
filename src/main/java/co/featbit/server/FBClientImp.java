@@ -285,7 +285,6 @@ public final class FBClientImp implements FBClient {
         this.dataSynchronizer.close();
         this.insightProcessor.close();
         Utils.shutDownThreadPool("featbit-shared-worker", this.sharedExecutorService, Duration.ofSeconds(2));
-        this.sharedExecutorService.shutdownNow();
     }
 
     @Override
