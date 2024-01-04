@@ -53,14 +53,22 @@ class EventBroadcasterImpl<Listener, Event> implements EventBroadcaster<Listener
             return;
         }
         for (Listener listener : listeners) {
+            if (executor.isShutdown()) {
+                _broadcast(listener, event);
+            }
             executor.submit(() -> {
-                try {
-                    broadcaster.accept(listener, event);
-                } catch (Exception e) {
-                    logger.error("Unexpected exception in event listener", e);
-                }
+                _broadcast(listener, event);
             });
         }
+    }
+
+    private void _broadcast(Listener listener, Event event) {
+        try {
+            broadcaster.accept(listener, event);
+        } catch (Exception e) {
+            logger.error("Unexpected exception in event listener", e);
+        }
+
     }
 
 
