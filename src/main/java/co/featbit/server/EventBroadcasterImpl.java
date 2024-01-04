@@ -55,10 +55,11 @@ class EventBroadcasterImpl<Listener, Event> implements EventBroadcaster<Listener
         for (Listener listener : listeners) {
             if (executor.isTerminated() || executor.isShutdown()) {
                 _broadcast(listener, event);
+            } else {
+                executor.submit(() -> {
+                    _broadcast(listener, event);
+                });
             }
-            executor.submit(() -> {
-                _broadcast(listener, event);
-            });
         }
     }
 
