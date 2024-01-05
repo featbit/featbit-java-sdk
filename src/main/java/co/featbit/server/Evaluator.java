@@ -9,22 +9,13 @@ import org.slf4j.Logger;
  * Evaluation process is totally isolated from update process and data storage
  */
 
-abstract class Evaluator {
+abstract class Evaluator implements EvaluationReason {
 
     protected static final Logger logger = Loggers.EVALUATION;
 
     protected static final String EXPT_KEY_PREFIX = "expt";
     protected static final String NO_EVAL_RES = "NE";
     protected static final String DEFAULT_JSON_VALUE = "DJV";
-    protected static final String REASON_USER_NOT_SPECIFIED = "user not specified";
-    protected static final String REASON_FLAG_OFF = "flag off";
-    protected static final String REASON_TARGET_MATCH = "target match";
-    protected static final String REASON_RULE_MATCH = "rule match";
-    protected static final String REASON_FALLTHROUGH = "fall through all rules";
-    protected static final String REASON_CLIENT_NOT_READY = "client not ready";
-    protected static final String REASON_FLAG_NOT_FOUND = "flag not found";
-    protected static final String REASON_WRONG_TYPE = "wrong type";
-    protected static final String REASON_ERROR = "error in evaluation";
     protected static final String FLAG_KEY_UNKNOWN = "flag key unknown";
     protected static final String FLAG_NAME_UNKNOWN = "flag name unknown";
     protected static final String FLAG_VALUE_UNKNOWN = "flag value unknown";
@@ -144,12 +135,12 @@ abstract class Evaluator {
             return name;
         }
 
-        private boolean isDefaultValue() {
+        public boolean isDefaultValue() {
             return this.index.equals(NO_EVAL_RES);
         }
 
         public <T> EvalDetail<T> toEvalDetail(T value) {
-            return EvalDetail.of(value, this.reason, this.keyName, this.name);
+            return EvalDetail.of(value, isDefaultValue(), this.reason, this.keyName, this.name);
         }
     }
 

@@ -4,7 +4,6 @@ import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageTypes;
 import co.featbit.server.exterior.DataSynchronizer;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableMap;
 
 import java.io.Serializable;
 import java.time.Duration;
