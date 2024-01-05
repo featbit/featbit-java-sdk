@@ -32,7 +32,7 @@ public final class FBUser implements Serializable {
 
     private FBUser(Builder builder) {
         String key = builder.key;
-            String userName = builder.userName;
+        String userName = builder.userName;
         checkArgument(StringUtils.isNotBlank(key), "Key shouldn't be empty");
         checkArgument(StringUtils.isNotBlank(userName), "UserName shouldn't be empty");
         this.key = key;
