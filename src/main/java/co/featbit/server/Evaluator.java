@@ -135,13 +135,12 @@ abstract class Evaluator implements EvaluationReason {
             return name;
         }
 
-        private boolean isDefaultValue() {
+        public boolean isDefaultValue() {
             return this.index.equals(NO_EVAL_RES);
         }
 
         public <T> EvalDetail<T> toEvalDetail(T value) {
-            String variationIndex = isDefaultValue() ? "-1" : Utils.uuidToBigInteger(this.index);
-            return EvalDetail.of(value, variationIndex, this.reason, this.keyName, this.name);
+            return EvalDetail.of(value, isDefaultValue(), this.reason, this.keyName, this.name);
         }
     }
 
