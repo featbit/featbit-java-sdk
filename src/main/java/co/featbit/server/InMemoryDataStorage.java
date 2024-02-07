@@ -83,7 +83,7 @@ final class InMemoryDataStorage implements DataStorage {
             DataStorageTypes.Item oldItem = null;
             if (oldItems != null) {
                 oldItem = oldItems.get(key);
-                if (oldItem != null && oldItem.getTimestamp() >= item.getTimestamp()) return false;
+                if (oldItem != null && oldItem.getTimestamp() > item.getTimestamp()) return false;
             }
             // the data cannot change in any way once an instance of the Immutable Map is created.
             // we should re-initialize a new internal map when update

@@ -1,0 +1,44 @@
+name: Java CI with Maven
+# Run workflow on commits to the `master` branch
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-release:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      # 下载代码
+      - uses: actions/checkout@v4
+      - name: Set up Maven Central Repository
+        # 安装 JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Maven Settings XML
+        uses: whelk-io/maven-settings-xml-action@v20
+        with:
+          repositories: ''
+          servers: ''
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - run: mkdir staging && cp target/*.jar staging
+      - name: Set Release version env variable
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      - name: Build and Test
+        run: |
+          echo "done!"
+      - name: Publish Tag and Release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "v${{ env.RELEASE_VERSION }}"
+          prerelease: false
+          title: "Release v${{ env.RELEASE_VERSION }}"
+          files: |
+            staging/*.jar

@@ -1,5 +1,7 @@
 package co.featbit.commons.model;
 
+import java.util.Collection;
+
 /**
  * The interface provides a standard return responding the request of getting all flag values from a client sdk
  */
@@ -18,6 +20,13 @@ public interface AllFlagStates {
      * @return OK if the last evaluation is successful, otherwise return the reason
      */
     String getReason();
+
+    /**
+     * return the flag keys of all flags in the specified Environment
+     *
+     * @return a collection of flag keys
+     */
+    Collection<String> getFlagKeys();
 
     /**
      * return the string value of a given flag key name or default value if flag not existed

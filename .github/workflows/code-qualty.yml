@@ -1,0 +1,28 @@
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+jobs:
+  run-tests:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      # 下载代码
+      - uses: actions/checkout@v4
+      - name: Set up Maven Central Repository
+        # 安装 JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Maven Settings XML
+        uses: whelk-io/maven-settings-xml-action@v20
+        with:
+          repositories: ''
+          servers: ''
+      - name: Build with Maven
+        run: mvn -B test --file pom.xml
