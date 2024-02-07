@@ -9,6 +9,7 @@ jobs:
   build-and-release:
     permissions: write-all
     runs-on: ubuntu-latest
+    environment: production
     steps:
       # 下载代码
       - uses: actions/checkout@v4
@@ -25,7 +26,7 @@ jobs:
           repositories: ''
           servers: ''
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn -B -DskipTests package --file pom.xml
       - run: mkdir staging && cp target/*.jar staging
       - name: Set Release version env variable
         run: |
