@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -43,6 +44,11 @@ abstract class Implicits {
         @Override
         public String getReason() {
             return reason;
+        }
+
+        @Override
+        public Collection<String> getFlagKeys() {
+            return cache.keySet();
         }
 
         private Evaluator.EvalResult getInternal(String flagKeyName, Object defaultValue, Class<?> requiredType) {

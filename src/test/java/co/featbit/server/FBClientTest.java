@@ -160,6 +160,7 @@ class FBClientTest extends FBClientBaseTest {
     void testAllLatestFlagsVariations() throws IOException {
         try (FBClient client = initClientInOfflineMode()) {
             AllFlagStates states = client.getAllLatestFlagsVariations(user1);
+            assertEquals(7, states.getFlagKeys().size());
             EvalDetail<Boolean> ed1 = states.getBooleanDetail("ff-test-bool", false);
             assertEquals(true, ed1.getVariation());
             assertEquals(REASON_TARGET_MATCH, ed1.getReason());

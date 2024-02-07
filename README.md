@@ -31,14 +31,14 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
     <dependency>
       <groupId>co.featbit</groupId>
       <artifactId>featbit-java-sdk</artifactId>
-      <version>1.3.0</version>
+      <version>1.4.1</version>
     </dependency>
 </dependencies>
 ```
 
 - Install the SDK using Gradle
 ```
-implementation 'co.featbit:featbit-java-sdk:1.3.0'
+implementation 'co.featbit:featbit-java-sdk:1.4.1'
 ```
 
 ### Prerequisite
@@ -232,7 +232,7 @@ The `userName` is used to search your user quickly. You may also define custom p
 FBUser user = new FBUser.Builder("key")
         .userName("name")
         .custom("property", "value")
-        .build()
+        .build();
 ```
 
 ### Evaluation
@@ -279,6 +279,9 @@ String value = client.variation("flag key", user, "Not Found");
 
 // get all variations for a given user
 AllFlagStates states = client.getAllLatestFlagsVariations(user);
+// get all flag keys
+Collection<String> flagKeys = states.getFlagKeys();
+// flag evaluations 
 EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
 String value = states.getString("flag key", user, "Not Found");
 ```
