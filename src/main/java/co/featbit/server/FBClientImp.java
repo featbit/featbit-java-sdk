@@ -212,13 +212,13 @@ public final class FBClientImp implements FBClient {
 
     @Override
     public <T> T jsonVariation(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
-        String json = variation(featureFlagKey, user, DEFAULT_JSON_VALUE);
-        return Utils.parseJsonObject(json, defaultValue, clazz, DEFAULT_JSON_VALUE.equals(json));
+        Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, DEFAULT_JSON_VALUE, clazz);
+        return Utils.parseJsonObject(res.getValue(), defaultValue, clazz, DEFAULT_JSON_VALUE.equals(res.getValue()));
     }
 
     @Override
     public <T> EvalDetail<T> jsonVariationDetail(String featureFlagKey, FBUser user, Class<T> clazz, T defaultValue) {
-        Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, DEFAULT_JSON_VALUE, null);
+        Evaluator.EvalResult res = evaluateInternal(featureFlagKey, user, DEFAULT_JSON_VALUE, clazz);
         T value = Utils.parseJsonObject(res.getValue(), defaultValue, clazz, DEFAULT_JSON_VALUE.equals(res.getValue()));
         return res.toEvalDetail(value);
     }
