@@ -80,6 +80,16 @@ class FBClientTest extends FBClientBaseTest {
             ed = client.boolVariationDetail("ff-test-bool", user4, false);
             assertTrue(ed.getVariation());
             assertEquals(REASON_FALLTHROUGH, ed.getReason());
+            String res1 = client.variation("ff-test-bool", user4, "error");
+            assertEquals("true", res1);
+            Integer res2 = client.intVariation("ff-test-bool", user4, -1);
+            assertEquals(-1, res2);
+            res = client.jsonVariation("ff-test-bool", user4, Boolean.class, false);
+            assertTrue(res);
+            res1 = client.jsonVariation("ff-test-bool", user4, String.class, "error");
+            assertEquals("true", res1);
+            res2 = client.jsonVariation("ff-test-bool", user4, Integer.class, -1);
+            assertEquals(-1, res2);
         }
     }
 
@@ -98,6 +108,22 @@ class FBClientTest extends FBClientBaseTest {
             EvalDetail<Double> ed1 = client.doubleVariationDetail("ff-test-number", user4, -1D);
             assertEquals(9999D, ed1.getVariation());
             assertEquals(REASON_FALLTHROUGH, ed1.getReason());
+            EvalDetail<Boolean> ed2 = client.boolVariationDetail("ff-test-number", user4, false);
+            assertFalse(ed2.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed2.getReason());
+            EvalDetail<String> ed3 = client.variationDetail("ff-test-number", user4, "error");
+            assertEquals("9999",ed3.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed3.getReason());
+            EvalDetail<Integer> ed4 = client.jsonVariationDetail("ff-test-number", user4, Integer.class, -1);
+            assertEquals(9999, ed4.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed4.getReason());
+            EvalDetail<Boolean> ed5 = client.jsonVariationDetail("ff-test-number", user4, Boolean.class, false);
+            assertFalse(ed5.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed5.getReason());
+            EvalDetail<String> ed6 = client.jsonVariationDetail("ff-test-number", user4, String.class, "error");
+            assertEquals("9999",ed6.getVariation());
+            assertEquals(REASON_FALLTHROUGH, ed6.getReason());
+
         }
     }
 
@@ -114,6 +140,21 @@ class FBClientTest extends FBClientBaseTest {
             EvalDetail<String> ed = client.variationDetail("ff-test-string", user1, "error");
             assertEquals("others", ed.getVariation());
             assertEquals(REASON_FALLTHROUGH, ed.getReason());
+            EvalDetail<Boolean> ed1 = client.boolVariationDetail("ff-test-string", email, false);
+            assertFalse(ed1.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed1.getReason());
+            EvalDetail<Double> ed2 = client.doubleVariationDetail("ff-test-string", email, -1D);
+            assertEquals(-1D, ed2.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed2.getReason());
+            EvalDetail<Boolean> ed3 = client.jsonVariationDetail("ff-test-string", email, Boolean.class, false);
+            assertFalse(ed3.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed3.getReason());
+            EvalDetail<Long> ed4 = client.jsonVariationDetail("ff-test-string", email, Long.class, -1L);
+            assertEquals(-1L, ed4.getVariation());
+            assertEquals(REASON_WRONG_TYPE, ed4.getReason());
+            EvalDetail<String> ed5 = client.jsonVariationDetail("ff-test-string", email, String.class, "error");
+            assertEquals("email", ed5.getVariation());
+            assertEquals(REASON_RULE_MATCH, ed5.getReason());
         }
     }
 

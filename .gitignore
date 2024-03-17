@@ -119,3 +119,4 @@ fabric.properties
 
 #sonarlint
 /.idea/sonarlint/issuestore/index.pb
+/.idea/copilot/
