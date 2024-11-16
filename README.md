@@ -172,7 +172,9 @@ if (inited) {
 `startWaitTime`: how long the constructor will block awaiting a successful data sync. Setting this to a zero or negative
 duration will not block and cause the constructor to return immediately.
 
-`offline`: Set whether SDK is offline. when set to true no connection to your feature management platform anymore
+`offline`: Set whether SDK is offline. when set to **true** no connection to your feature management platform anymore
+
+`disableEvents`: Set whether disable to send events. when set to **true** no sending any events to your feature management platform
 
 Here is an example of creating a client with default configurations:
 

@@ -18,6 +18,7 @@ public class FBConfig {
 
     private boolean offline;
     private Duration startWaitTime;
+    private boolean disableEvents;
 
     private String streamingURL;
 
@@ -59,10 +60,15 @@ public class FBConfig {
         return eventURL;
     }
 
+    public boolean isDisableEvents() {
+        return disableEvents;
+    }
+
     public FBConfig(Builder builder) {
         this.offline = builder.offline;
         this.streamingURL = builder.streamingURL;
         this.eventURL = builder.eventURL;
+        this.disableEvents = builder.disableEvents;
         this.startWaitTime = builder.startWaitTime == null ? DEFAULT_START_WAIT_TIME : builder.startWaitTime;
         if (builder.offline) {
             Loggers.CLIENT.info("FB JAVA SDK: SDK is in offline mode");
@@ -72,7 +78,7 @@ public class FBConfig {
             this.dataSynchronizerFactory =
                     builder.dataSynchronizerFactory == null ? Factory.dataSynchronizerFactory() : builder.dataSynchronizerFactory;
             this.insightProcessorFactory =
-                    builder.insightProcessorFactory == null ? Factory.insightProcessorFactory() : builder.insightProcessorFactory;
+                    builder.insightProcessorFactory == null ? (this.disableEvents ? Factory.externalEventTrack() : Factory.insightProcessorFactory()) : builder.insightProcessorFactory;
         }
         this.dataStorageFactory =
                 builder.dataStorageFactory == null ? Factory.inMemoryDataStorageFactory() : builder.dataStorageFactory;
@@ -88,6 +94,7 @@ public class FBConfig {
      *                      .eventURL("your event URI")
      *                     .startWaitTime(Duration.ZERO)
      *                     .offline(false)
+     *                     .disableEvents(false)
      *                     .build()
      * </code></pre>
      */
@@ -99,6 +106,8 @@ public class FBConfig {
         private InsightProcessorFactory insightProcessorFactory;
         private Duration startWaitTime;
         private boolean offline = false;
+        private boolean disableEvents = false;
+
 
         private String streamingURL;
 
@@ -203,6 +212,17 @@ public class FBConfig {
          */
         public Builder eventURL(String eventURL) {
             this.eventURL = eventURL;
+            return this;
+        }
+
+        /**
+         * Set whether disable to send events
+         *
+         * @param disableEvents
+         * @return the builder
+         */
+        public Builder disableEvents(boolean disableEvents) {
+            this.disableEvents = disableEvents;
             return this;
         }
 
