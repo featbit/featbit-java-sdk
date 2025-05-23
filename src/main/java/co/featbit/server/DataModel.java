@@ -157,7 +157,7 @@ public abstract class DataModel {
             }
             ImmutableMap.Builder<String, DataStorageTypes.Item> segments = ImmutableMap.builder();
             for (Segment segment : getSegments()) {
-                DataStorageTypes.Item item = segment.isArchived ? segment.toArchivedItem() : segment;
+                DataStorageTypes.Item item = segment.isArchived() ? segment.toArchivedItem() : segment;
                 segments.put(item.getId(), item);
             }
             return ImmutableMap.of(DataStorageTypes.FEATURES, flags.build(), DataStorageTypes.SEGMENTS, segments.build());
