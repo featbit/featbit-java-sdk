@@ -45,6 +45,7 @@ jobs:
             staging/*.jar
 
   publish:
+    needs: build-and-release
     runs-on: ubuntu-latest
     environment: production
     steps:
