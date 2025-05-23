@@ -31,14 +31,14 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
     <dependency>
       <groupId>co.featbit</groupId>
       <artifactId>featbit-java-sdk</artifactId>
-      <version>1.4.1</version>
+      <version>1.4.4</version>
     </dependency>
 </dependencies>
 ```
 
 - Install the SDK using Gradle
 ```
-implementation 'co.featbit:featbit-java-sdk:1.4.1'
+implementation 'co.featbit:featbit-java-sdk:1.4.4'
 ```
 
 ### Prerequisite
