@@ -12,9 +12,11 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static co.featbit.server.Evaluator.*;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -402,6 +404,18 @@ public final class FBClientImp implements FBClient {
             }
         }
         insightProcessor.send(event);
+    }
+
+    public String getAllDataAsJson() {
+        try {
+            List<DataModel.FeatureFlag> allFlags = this.storage.getAll(DataStorageTypes.FEATURES).values().stream().map(v -> (DataModel.FeatureFlag) v).collect(Collectors.toList());
+            List<DataModel.Segment> allSegments = this.storage.getAll(DataStorageTypes.SEGMENTS).values().stream().map(v -> (DataModel.Segment) v).collect(Collectors.toList());
+            DataModel.DataExposer allData = new DataModel.DataExposer(allFlags, allSegments);
+            return JsonHelper.serialize(allData);
+        } catch (Exception ex) {
+            logger.error("FB JAVA SDK: unexpected error in getAllDataAsJson", ex);
+        }
+        return null;
     }
 
 }

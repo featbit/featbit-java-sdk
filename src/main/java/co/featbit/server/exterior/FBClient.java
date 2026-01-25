@@ -262,4 +262,11 @@ public interface FBClient extends Closeable {
      * @param metrics event name and numeric value in K/V
      */
     void trackMetrics(FBUser user, Map<String, Double> metrics);
+
+    /**
+     * Get all data as a json string
+     *
+     * @return all data as json string
+     */
+    String getAllDataAsJson();
 }

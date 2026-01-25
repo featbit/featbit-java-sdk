@@ -4,7 +4,6 @@ import co.featbit.commons.json.JsonHelper;
 import co.featbit.server.exterior.DataStorageTypes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
@@ -168,9 +167,7 @@ public abstract class DataModel {
     static class Segment implements DataStorageTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         private final String id;
         private final Boolean isArchived;
-        @Expose(serialize = false)
         final Date updatedAt;
-        @Expose(deserialize = false)
         private Long timestamp;
         private final List<String> included;
         private final List<String> excluded;
@@ -247,9 +244,7 @@ public abstract class DataModel {
     @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
     static class FeatureFlag implements DataStorageTypes.Item, JsonHelper.AfterJsonParseDeserializable {
         final String id;
-        @Expose(serialize = false)
         final Date updatedAt;
-        @Expose(deserialize = false)
         private Long timestamp;
         private final boolean isArchived;
         private final boolean exptIncludeAllTargets;
@@ -262,8 +257,7 @@ public abstract class DataModel {
         private final List<TargetRule> rules;
         private final Fallthrough fallthrough;
         private final String disabledVariationId;
-        @Expose(serialize = false, deserialize = false)
-        private Map<String, Variation> variationMap;
+        private transient Map<String, Variation> variationMap;
 
         FeatureFlag(String id, Date updatedAt, boolean isArchived, boolean exptIncludeAllTargets, boolean isEnabled, String name, String key, String variationType, List<Variation> variations, List<TargetUser> targetUsers, List<TargetRule> rules, Fallthrough fallthrough, String disabledVariationId) {
             this.id = id;
@@ -536,5 +530,22 @@ public abstract class DataModel {
         }
     }
 
+    static class DataExposer {
+        private final List<FeatureFlag> featureFlags;
+        private final List<Segment> segments;
+
+        public DataExposer(List<FeatureFlag> featureFlags, List<Segment> segments) {
+            this.featureFlags = featureFlags;
+            this.segments = segments;
+        }
+
+        public List<FeatureFlag> getFeatureFlags() {
+            return featureFlags;
+        }
+
+        public List<Segment> getSegments() {
+            return segments;
+        }
+    }
 
 }
