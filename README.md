@@ -31,14 +31,14 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
     <dependency>
       <groupId>co.featbit</groupId>
       <artifactId>featbit-java-sdk</artifactId>
-      <version>1.4.4</version>
+      <version>1.4.5</version>
     </dependency>
 </dependencies>
 ```
 
 - Install the SDK using Gradle
 ```
-implementation 'co.featbit:featbit-java-sdk:1.4.4'
+implementation 'co.featbit:featbit-java-sdk:1.4.5'
 ```
 
 ### Prerequisite
@@ -286,6 +286,10 @@ Collection<String> flagKeys = states.getFlagKeys();
 // flag evaluations 
 EvalDetail<String> detail = states.getStringDetail("flag key", user, "Not Found");
 String value = states.getString("flag key", user, "Not Found");
+
+// get all flags/segments as json string
+String json = client.getAllDataAsJson();
+
 ```
 
 > If evaluation called before Java SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag
