@@ -44,26 +44,26 @@ jobs:
           files: |
             staging/*.jar
 
-    publish:
-      needs: build-and-release
-      runs-on: ubuntu-latest
-      environment: production
-      steps:
-        - uses: actions/checkout@v4
-        - name: Set up JDK 8
-          uses: actions/setup-java@v4
-          with:
-            java-version: '8'
-            distribution: 'temurin'
-            cache: 'maven'
-            server-id: central
-            server-username: CENTRAL_USERNAME
-            server-password: CENTRAL_PASSWORD
-            gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
-            gpg-passphrase: GPG_PASSPHRASE
-        - name: Deploy to Sonatype Central
-          run: mvn clean deploy -DskipTests -B
-          env:
-            CENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-            CENTRAL_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-            GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+  publish:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+      - name: Deploy to Sonatype Central
+        run: mvn clean deploy -DskipTests -B
+        env:
+          CENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
