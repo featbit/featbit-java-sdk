@@ -41,6 +41,25 @@ JAVA Server Side SDK is based on Java SE 8 and is available on Maven Central. Yo
 implementation 'co.featbit:featbit-java-sdk:1.4.5'
 ```
 
+#### Unreleased method feature gates
+
+`FeatGate` and `FeatGateProxy` are not included in the published `1.4.5` artifact. Build this branch locally to try them:
+
+```sh
+git clone --branch feat/565-method-feature-gate --single-branch https://github.com/featbit/featbit-java-sdk.git
+cd featbit-java-sdk
+mvn "-Dgpg.skip=true" "-Dmaven.javadoc.skip=true" install
+```
+
+This replaces `co.featbit:featbit-java-sdk:1.4.5` in your local Maven repository with this build. Use the dependency above in your application. For Gradle, also put `mavenLocal()` before `mavenCentral()` and use `--refresh-dependencies` if the published SDK was already cached:
+
+```groovy
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+```
+
 ### Prerequisite
 
 Before using the SDK, you need to obtain the environment secret and SDK URLs. 
@@ -297,6 +316,8 @@ String json = client.getAllDataAsJson();
 is not found SDK will return the default value you set. `EvalDetail` will explain the details of the latest evaluation including error raison.
 
 ### Method Feature Gates
+
+This feature requires a [local build](#unreleased-method-feature-gates) until it is released.
 
 Use `FeatGateProxy` with a service interface to select method implementations by flag value. Annotations can be placed on interface or implementation methods.
 

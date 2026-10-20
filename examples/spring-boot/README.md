@@ -1,9 +1,9 @@
 # Spring Boot Method Feature Gates
 
-Requires JDK 17+ and Maven. Run from the repository root to use the SDK changes in this checkout:
+Requires JDK 17+ and Maven. Method feature gates are not in the published SDK yet; first [check out the feature branch](../../README.md#unreleased-method-feature-gates). Run from the repository root to install this checkout locally before starting the example:
 
 ```sh
-mvn -Dgpg.skip=true install
+mvn "-Dgpg.skip=true" "-Dmaven.javadoc.skip=true" install
 mvn -f examples/spring-boot/pom.xml spring-boot:run
 ```
 
