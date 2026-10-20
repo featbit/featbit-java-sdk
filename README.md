@@ -105,6 +105,7 @@ class Main {
 ### Examples
 
 - [Java Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-java/src/main/java/co/featbit/demo/JavaDemo.java)
+- [Spring Boot Method Feature Gates](examples/spring-boot)
 
 ## SDK
 
@@ -294,6 +295,45 @@ String json = client.getAllDataAsJson();
 
 > If evaluation called before Java SDK client initialized, you set the wrong flag key/user for the evaluation or the related feature flag
 is not found SDK will return the default value you set. `EvalDetail` will explain the details of the latest evaluation including error raison.
+
+### Method Feature Gates
+
+Use `FeatGateProxy` with a service interface to select method implementations by flag value. Annotations can be placed on interface or implementation methods.
+
+```java
+import co.featbit.server.integrations.FeatGate;
+import co.featbit.server.integrations.FeatGateProxy;
+import co.featbit.server.integrations.FBUserContextHolder;
+
+interface UserService {
+    String getFirstName();
+}
+
+class UserServiceImpl implements UserService {
+    @FeatGate(flag = "getFirstName", variants = {
+        @FeatGate.Variant(value = "v2", method = "formattedFirstName")
+    })
+    public String getFirstName() {
+        return "albert";
+    }
+
+    private String formattedFirstName() {
+        return "Albert";
+    }
+}
+
+UserService service = FeatGateProxy.create(UserService.class, new UserServiceImpl(), client);
+FBUserContextHolder.setCurrentUser(user, false);
+try {
+    String firstName = service.getFirstName();
+} finally {
+    FBUserContextHolder.remove();
+}
+```
+
+Variant methods must accept the same parameters and return a compatible type. The original method runs when no user is set, evaluation returns the SDK default, or the value has no mapping. Only calls through the proxy are gated; calls within the target bypass it. Business exceptions propagate to the caller.
+
+See the [Spring Boot example](examples/spring-boot) for a runnable application with user targeting and independent method gates.
 
 ### Flag Tracking
 You can register registers a listener to be notified of feature flag changes in general.
