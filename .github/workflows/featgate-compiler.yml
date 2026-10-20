@@ -1,0 +1,27 @@
+name: Method gate compiler
+
+on:
+  push:
+    branches: [feat/565-method-feature-gate]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: ['8', '17', '21']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - run: mvn -B -Dgpg.skip=true -Dmaven.javadoc.skip=true install
+      - run: mvn -B -f tools/featgate-compiler/pom.xml install
+      - if: matrix.java != '8'
+        run: mvn -B -f examples/spring-boot-compiler/pom.xml verify

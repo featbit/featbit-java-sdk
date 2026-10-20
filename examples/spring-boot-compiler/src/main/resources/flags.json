@@ -1,0 +1,31 @@
+{
+  "messageType": "data-sync",
+  "data": {
+    "eventType": "full",
+    "featureFlags": [
+      {
+        "key": "getFirstName",
+        "name": "Format first name",
+        "updatedAt": "2026-10-20T00:00:00Z",
+        "variationType": "string",
+        "isEnabled": true,
+        "variations": [{"id": "v1", "value": "v1"}, {"id": "v2", "value": "v2"}],
+        "targetUsers": [{"keyIds": ["formatted", "first-only"], "variationId": "v2"}],
+        "disabledVariationId": "v1",
+        "fallthrough": {"variations": [{"id": "v1", "rollout": [0, 1]}]}
+      },
+      {
+        "key": "getLastName",
+        "name": "Format last name",
+        "updatedAt": "2026-10-20T00:00:00Z",
+        "variationType": "string",
+        "isEnabled": true,
+        "variations": [{"id": "v1", "value": "v1"}, {"id": "v2", "value": "v2"}],
+        "targetUsers": [{"keyIds": ["formatted", "last-only"], "variationId": "v2"}],
+        "disabledVariationId": "v1",
+        "fallthrough": {"variations": [{"id": "v1", "rollout": [0, 1]}]}
+      }
+    ],
+    "segments": []
+  }
+}

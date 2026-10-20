@@ -60,6 +60,8 @@ repositories {
 }
 ```
 
+Same-name implementations also require the optional [FeatGate compiler plugin](tools/featgate-compiler). It is installed separately and enabled explicitly in the application build.
+
 ### Prerequisite
 
 Before using the SDK, you need to obtain the environment secret and SDK URLs. 
@@ -125,6 +127,7 @@ class Main {
 
 - [Java Demo](https://github.com/featbit/featbit-samples/blob/main/samples/dino-game/demo-java/src/main/java/co/featbit/demo/JavaDemo.java)
 - [Spring Boot Method Feature Gates](examples/spring-boot)
+- [Spring Boot Same-Name Feature Gates](examples/spring-boot-compiler)
 
 ## SDK
 
@@ -318,6 +321,35 @@ is not found SDK will return the default value you set. `EvalDetail` will explai
 ### Method Feature Gates
 
 This feature requires a [local build](#unreleased-method-feature-gates) until it is released.
+
+#### Same-name implementations
+
+Enable the [FeatGate compiler plugin](tools/featgate-compiler) to declare implementations with the same name and parameters in one class:
+
+```java
+class UserServiceImpl implements UserService {
+    @FeatGate(flag = "getFirstName", value = "v1")
+    @FeatGate(flag = "getFirstName", value = "default")
+    private String getFirstName() {
+        return "albert";
+    }
+
+    @FeatGate(flag = "getFirstName", value = "v2")
+    private String getFirstName() {
+        return "albert".toUpperCase(java.util.Locale.ROOT);
+    }
+}
+
+UserService service = FeatGateSupport.bind(new UserServiceImpl(), client);
+```
+
+The compiler generates dispatch for direct and internal calls. `value = "default"` marks the fallback implementation. Each call evaluates the flag for the user in `FBUserContextHolder`; missing users, unbound clients, and unmapped values use the fallback. Bind the existing singleton client once; this integration does not own its lifecycle.
+
+After rollout, delete the old method and the remaining `@FeatGate` annotation. The surviving method keeps its name and body. Keep the compiler enabled if private methods implement public interface methods; it emits those interface implementations as public. IDE Java analyzers may still report duplicate declarations in the authored source.
+
+See the [Spring Boot same-name example](examples/spring-boot-compiler) for build configuration, request context, and deletion-only cleanup.
+
+#### Interface proxy
 
 Use `FeatGateProxy` with a service interface to select method implementations by flag value. Annotations can be placed on interface or implementation methods.
 

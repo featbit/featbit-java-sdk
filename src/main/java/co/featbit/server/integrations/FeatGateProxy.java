@@ -83,6 +83,9 @@ public final class FeatGateProxy {
             if (annotation == null) {
                 return;
             }
+            if (!annotation.value().isEmpty()) {
+                throw new IllegalArgumentException("Value-based feature gates require the FeatGate compiler plugin");
+            }
             if (flag.trim().isEmpty()) {
                 throw new IllegalArgumentException("Feature flag key must not be blank");
             }
