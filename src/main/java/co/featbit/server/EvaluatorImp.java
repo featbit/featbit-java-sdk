@@ -138,8 +138,11 @@ final class EvaluatorImp extends Evaluator {
     private boolean inSegmentClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getKey();
         try {
-            List<String> segments = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
-            }.getType());
+            Collection<String> segments = condition.getValueSet();
+            if (segments == null) {
+                segments = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
+                }.getType());
+            }
             return segments.stream().map(segmentGetter::get).anyMatch(segment -> {
                 if (segment == null) {
                     return false;
@@ -223,8 +226,11 @@ final class EvaluatorImp extends Evaluator {
     private boolean oneOfClause(FBUser user, DataModel.Condition condition) {
         String pv = user.getProperty(condition.getProperty());
         try {
-            List<String> clauseValues = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
-            }.getType());
+            Collection<String> clauseValues = condition.getValueSet();
+            if (clauseValues == null) {
+                clauseValues = JsonHelper.deserialize(condition.getValue(), new TypeToken<List<String>>() {
+                }.getType());
+            }
             return pv != null && clauseValues.contains(pv);
         } catch (JsonParseException e) {
             return false;
