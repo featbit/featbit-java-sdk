@@ -15,9 +15,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -154,13 +156,14 @@ class ListTargetingTest {
         syncSegment(userIdRule("IsOneOf", first), Collections.emptyList(), Collections.emptyList());
 
         AtomicBoolean done = new AtomicBoolean();
+        CountDownLatch started = new CountDownLatch(4);
         ExecutorService readers = Executors.newFixedThreadPool(4);
         List<Future<Integer>> results = new ArrayList<>();
         try {
             for (int t = 0; t < 4; t++) {
                 results.add(readers.submit(() -> {
                     int evaluations = 0;
-                    while (!done.get()) {
+                    do {
                         for (int index : new int[]{0, size - 1, size, 2 * size - 1}) {
                             String reason = detail(index, false).getReason();
                             if (!reason.equals(REASON_RULE_MATCH) && !reason.equals(REASON_FALLTHROUGH)) {
@@ -168,10 +171,13 @@ class ListTargetingTest {
                             }
                             evaluations++;
                         }
-                    }
+                        started.countDown();
+                    } while (!done.get());
                     return evaluations;
                 }));
             }
+            // replace only once every reader is evaluating, so replacements overlap evaluations
+            assertTrue(started.await(10, TimeUnit.SECONDS));
             for (int i = 0; i < 200; i++) {
                 syncSegment(userIdRule("IsOneOf", i % 2 == 0 ? second : first), Collections.emptyList(), Collections.emptyList());
             }
