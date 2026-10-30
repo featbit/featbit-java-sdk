@@ -103,6 +103,31 @@ class ListTargetingTest {
     }
 
     @Test
+    void testSegmentsInOneConditionAreCheckedInListedOrder() {
+        // a later segment with an invalid value must not be reached once an earlier one matches
+        for (int pair = 0; pair < 20; pair++) {
+            String matching = "segment-" + (2 * pair);
+            String invalid = "segment-" + (2 * pair + 1);
+            JsonArray segments = new JsonArray();
+            segments.add(segment(matching, Collections.singletonList(key(1)), new JsonArray()));
+            JsonArray invalidRules = new JsonArray();
+            invalidRules.add(segmentRule(condition("user_id", "IsOneOf", "not a list")));
+            segments.add(segment(invalid, Collections.emptyList(), invalidRules));
+
+            JsonArray segmentIds = new JsonArray();
+            segmentIds.add(matching);
+            segmentIds.add(invalid);
+            JsonArray rules = new JsonArray();
+            rules.add(flagRule(condition("User is in segment", "", segmentIds.toString())));
+            syncFlag(new JsonArray(), rules, segments);
+
+            EvalDetail<Boolean> detail = detail(1, false);
+            assertTrue(detail.getVariation(), "pair " + pair + ": " + detail.getReason());
+            assertEquals(REASON_RULE_MATCH, detail.getReason());
+        }
+    }
+
+    @Test
     void testOtherOperatorsStillUseTheRawValue() {
         syncFlagRule(condition("user_id", "Equal", userId(3)));
         assertTrue(evaluate(3));
@@ -172,16 +197,12 @@ class ListTargetingTest {
     }
 
     private void syncSegment(JsonObject rule, List<String> included, List<String> excluded) {
-        JsonObject segment = new JsonObject();
-        segment.addProperty("id", SEGMENT_ID);
-        segment.addProperty("isArchived", false);
-        segment.add("included", strings(included));
-        segment.add("excluded", strings(excluded));
         JsonArray rules = new JsonArray();
         if (rule != null) {
             rules.add(rule);
         }
-        segment.add("rules", rules);
+        JsonObject segment = segment(SEGMENT_ID, included, rules);
+        segment.add("excluded", strings(excluded));
         JsonArray segments = new JsonArray();
         segments.add(segment);
 
@@ -190,6 +211,26 @@ class ListTargetingTest {
         JsonArray flagRules = new JsonArray();
         flagRules.add(flagRule(condition("User is in segment", "", segmentIds.toString())));
         syncFlag(new JsonArray(), flagRules, segments);
+    }
+
+    private static JsonObject segment(String id, List<String> included, JsonArray rules) {
+        JsonObject segment = new JsonObject();
+        segment.addProperty("id", id);
+        segment.addProperty("isArchived", false);
+        segment.add("included", strings(included));
+        segment.add("excluded", new JsonArray());
+        segment.add("rules", rules);
+        return segment;
+    }
+
+    private static JsonObject segmentRule(JsonObject condition) {
+        JsonArray conditions = new JsonArray();
+        conditions.add(condition);
+        JsonObject rule = new JsonObject();
+        rule.addProperty("id", "segment-rule");
+        rule.addProperty("name", "segment rule");
+        rule.add("conditions", conditions);
+        return rule;
     }
 
     private void syncFlagRule(JsonObject condition) {
@@ -253,13 +294,7 @@ class ListTargetingTest {
     }
 
     private static JsonObject userIdRule(String op, int... indexes) {
-        JsonArray conditions = new JsonArray();
-        conditions.add(condition("user_id", op, userIds(indexes)));
-        JsonObject rule = new JsonObject();
-        rule.addProperty("id", "user-id-rule");
-        rule.addProperty("name", "user ids");
-        rule.add("conditions", conditions);
-        return rule;
+        return segmentRule(condition("user_id", op, userIds(indexes)));
     }
 
     private static JsonObject flagRule(JsonObject condition) {

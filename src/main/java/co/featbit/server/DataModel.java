@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -478,7 +479,7 @@ public abstract class DataModel {
         private final String value;
 
         // the parsed value of a list operator, built once per sync; null when the value is not a list
-        private transient Set<String> valueSet;
+        private transient Collection<String> parsedValues;
 
         Condition(String property, String op, String value) {
             this.property = property;
@@ -498,27 +499,27 @@ public abstract class DataModel {
             return value;
         }
 
-        Set<String> getValueSet() {
-            return valueSet;
+        Collection<String> getParsedValues() {
+            return parsedValues;
         }
 
         @Override
         public void afterDeserialization() {
             // segment conditions have no op, see EvaluatorImp.ifUserMatchClause
             String clause = StringUtils.isBlank(op) ? property : op;
-            if (!Evaluator.IS_ONE_OF_CLAUSE.equals(clause)
-                    && !Evaluator.NOT_ONE_OF_CLAUSE.equals(clause)
-                    && !Evaluator.IS_IN_SEGMENT_CLAUSE.equals(clause)
-                    && !Evaluator.NOT_IN_SEGMENT_CLAUSE.equals(clause)) {
+            boolean oneOf = Evaluator.IS_ONE_OF_CLAUSE.equals(clause) || Evaluator.NOT_ONE_OF_CLAUSE.equals(clause);
+            boolean inSegment = Evaluator.IS_IN_SEGMENT_CLAUSE.equals(clause) || Evaluator.NOT_IN_SEGMENT_CLAUSE.equals(clause);
+            if (!oneOf && !inSegment) {
                 return;
             }
             try {
                 List<String> values = JsonHelper.deserialize(value, new TypeToken<List<String>>() {
                 }.getType());
-                valueSet = values == null ? null : toSet(values);
+                // segments are checked in the listed order and evaluation stops at the first match, so keep that order
+                parsedValues = values == null ? null : oneOf ? toSet(values) : Collections.unmodifiableList(values);
             } catch (RuntimeException e) {
                 // leave it to evaluation, which keeps the original behavior for an invalid value
-                valueSet = null;
+                parsedValues = null;
             }
         }
     }
