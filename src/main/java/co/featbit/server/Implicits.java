@@ -3,11 +3,13 @@ package co.featbit.server;
 import co.featbit.commons.model.AllFlagStates;
 import co.featbit.commons.model.EvalDetail;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static co.featbit.server.Evaluator.*;
@@ -20,6 +22,7 @@ abstract class Implicits {
         private String reason;
 
         private transient final Consumer<InsightTypes.Event> eventHandler;
+        private transient final Set<String> insightsEnabledFlags;
 
         private transient final Map<String, Map.Entry<Evaluator.EvalResult, InsightTypes.FlagEvent>> cache;
 
@@ -27,10 +30,12 @@ abstract class Implicits {
         ComplexAllFlagStates(boolean success,
                              String reason,
                              Map<Evaluator.EvalResult, InsightTypes.FlagEvent> data,
-                             Consumer<InsightTypes.Event> eventHandler) {
+                             Consumer<InsightTypes.Event> eventHandler,
+                             Set<String> insightsEnabledFlags) {
             this.success = success;
             this.reason = reason;
             this.eventHandler = eventHandler;
+            this.insightsEnabledFlags = ImmutableSet.copyOf(insightsEnabledFlags);
             ImmutableMap.Builder<String, Map.Entry<Evaluator.EvalResult, InsightTypes.FlagEvent>> builder = ImmutableMap.builder();
             data.forEach((evalResult, event) -> builder.put(evalResult.getKeyName(), new AbstractMap.SimpleImmutableEntry<>(evalResult, event)));
             cache = builder.build();
@@ -58,7 +63,7 @@ abstract class Implicits {
             }
             Evaluator.EvalResult er = entry.getKey();
             if (Utils.checkType(er.getFlagType(), requiredType, defaultValue.toString())) {
-                if (eventHandler != null) {
+                if (eventHandler != null && insightsEnabledFlags.contains(flagKeyName)) {
                     InsightTypes.FlagEvent event = entry.getValue();
                     event.updateTimeStamp();
                     eventHandler.accept(event);
