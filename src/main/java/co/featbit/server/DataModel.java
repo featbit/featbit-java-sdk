@@ -9,10 +9,13 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class DataModel {
@@ -172,6 +175,8 @@ public abstract class DataModel {
         private final List<String> included;
         private final List<String> excluded;
         private final List<TargetRule> rules;
+        private transient Set<String> includedSet;
+        private transient Set<String> excludedSet;
 
         Segment(String id, Boolean isArchived, Date updatedAt, List<String> included, List<String> excluded, List<TargetRule> rules) {
             this.id = id;
@@ -215,15 +220,23 @@ public abstract class DataModel {
         }
 
         public Boolean isMatchUser(String userKeyId) {
-            if (getExcluded().contains(userKeyId)) {
+            if (excludedSet().contains(userKeyId)) {
                 return Boolean.FALSE;
             }
 
-            if (getIncluded().contains(userKeyId)) {
+            if (includedSet().contains(userKeyId)) {
                 return Boolean.TRUE;
             }
             // if no included or excluded, then it's to match rules
             return null;
+        }
+
+        private Set<String> includedSet() {
+            return includedSet == null ? toSet(getIncluded()) : includedSet;
+        }
+
+        private Set<String> excludedSet() {
+            return excludedSet == null ? toSet(getExcluded()) : excludedSet;
         }
 
         public DataStorageTypes.Item toArchivedItem() {
@@ -233,6 +246,8 @@ public abstract class DataModel {
         @Override
         public void afterDeserialization() {
             this.timestamp = updatedAt.getTime();
+            this.includedSet = toSet(getIncluded());
+            this.excludedSet = toSet(getExcluded());
         }
 
         @Override
@@ -391,10 +406,13 @@ public abstract class DataModel {
         }
     }
 
-    static final class TargetUser {
+    @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
+    static final class TargetUser implements JsonHelper.AfterJsonParseDeserializable {
         private final List<String> keyIds;
 
         private final String variationId;
+
+        private transient Set<String> keyIdSet;
 
         public TargetUser(List<String> keyIds, String variationId) {
             this.keyIds = keyIds;
@@ -410,7 +428,12 @@ public abstract class DataModel {
         }
 
         public boolean isTargeted(String user) {
-            return getKeyIds().stream().anyMatch(key -> key.equals(user));
+            return (keyIdSet == null ? toSet(getKeyIds()) : keyIdSet).contains(user);
+        }
+
+        @Override
+        public void afterDeserialization() {
+            this.keyIdSet = toSet(getKeyIds());
         }
     }
 
@@ -447,12 +470,16 @@ public abstract class DataModel {
         }
     }
 
-    static final class Condition {
+    @JsonAdapter(JsonHelper.AfterJsonParseDeserializableTypeAdapterFactory.class)
+    static final class Condition implements JsonHelper.AfterJsonParseDeserializable {
         private final String property;
 
         private final String op;
 
         private final String value;
+
+        // the parsed value of a list operator, built once per sync; null when the value is not a list
+        private transient Collection<String> parsedValues;
 
         Condition(String property, String op, String value) {
             this.property = property;
@@ -471,6 +498,34 @@ public abstract class DataModel {
         public String getValue() {
             return value;
         }
+
+        Collection<String> getParsedValues() {
+            return parsedValues;
+        }
+
+        @Override
+        public void afterDeserialization() {
+            // segment conditions have no op, see EvaluatorImp.ifUserMatchClause
+            String clause = StringUtils.isBlank(op) ? property : op;
+            boolean oneOf = Evaluator.IS_ONE_OF_CLAUSE.equals(clause) || Evaluator.NOT_ONE_OF_CLAUSE.equals(clause);
+            boolean inSegment = Evaluator.IS_IN_SEGMENT_CLAUSE.equals(clause) || Evaluator.NOT_IN_SEGMENT_CLAUSE.equals(clause);
+            if (!oneOf && !inSegment) {
+                return;
+            }
+            try {
+                List<String> values = JsonHelper.deserialize(value, new TypeToken<List<String>>() {
+                }.getType());
+                // segments are checked in the listed order and evaluation stops at the first match, so keep that order
+                parsedValues = values == null ? null : oneOf ? toSet(values) : Collections.unmodifiableList(values);
+            } catch (RuntimeException e) {
+                // leave it to evaluation, which keeps the original behavior for an invalid value
+                parsedValues = null;
+            }
+        }
+    }
+
+    private static Set<String> toSet(List<String> values) {
+        return Collections.unmodifiableSet(new HashSet<>(values));
     }
 
     static final class RolloutVariation {
