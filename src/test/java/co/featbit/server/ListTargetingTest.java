@@ -163,6 +163,7 @@ class ListTargetingTest {
             for (int t = 0; t < 4; t++) {
                 results.add(readers.submit(() -> {
                     int evaluations = 0;
+                    boolean firstPass = true;
                     do {
                         for (int index : new int[]{0, size - 1, size, 2 * size - 1}) {
                             String reason = detail(index, false).getReason();
@@ -171,7 +172,10 @@ class ListTargetingTest {
                             }
                             evaluations++;
                         }
-                        started.countDown();
+                        if (firstPass) {
+                            started.countDown();
+                            firstPass = false;
+                        }
                     } while (!done.get());
                     return evaluations;
                 }));
