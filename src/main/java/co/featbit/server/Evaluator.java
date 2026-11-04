@@ -13,7 +13,6 @@ abstract class Evaluator implements EvaluationReason {
 
     protected static final Logger logger = Loggers.EVALUATION;
 
-    protected static final String EXPT_KEY_PREFIX = "expt";
     protected static final String NO_EVAL_RES = "NE";
     protected static final String DEFAULT_JSON_VALUE = "DJV";
     protected static final String FLAG_KEY_UNKNOWN = "flag key unknown";
@@ -69,40 +68,36 @@ abstract class Evaluator implements EvaluationReason {
         private final String index;
         private final String value;
         private final String reason;
-        private final boolean sendToExperiment;
         private final String keyName;
         private final String name;
 
 
-        EvalResult(String flagType, String value, String index, String reason, boolean sendToExperiment, String keyName, String name) {
+        EvalResult(String flagType, String value, String index, String reason, String keyName, String name) {
             this.flagType = flagType;
             this.value = value;
             this.index = index;
             this.reason = reason;
-            this.sendToExperiment = sendToExperiment;
             this.keyName = keyName;
             this.name = name;
         }
 
         public static EvalResult error(String reason, String keyName, String name) {
-            return new EvalResult(null, null, NO_EVAL_RES, reason, false, keyName, name);
+            return new EvalResult(null, null, NO_EVAL_RES, reason, keyName, name);
         }
 
         public static EvalResult error(String defaultValue, String reason, String keyName, String name) {
-            return new EvalResult(null, defaultValue, NO_EVAL_RES, reason, false, keyName, name);
+            return new EvalResult(null, defaultValue, NO_EVAL_RES, reason, keyName, name);
         }
 
         public static EvalResult of(String flagType,
                                     DataModel.Variation option,
                                     String reason,
-                                    boolean sendToExperiment,
                                     String keyName,
                                     String name) {
             return new EvalResult(flagType,
                     option.getValue(),
                     option.getId(),
                     reason,
-                    sendToExperiment,
                     keyName,
                     name);
         }
@@ -121,10 +116,6 @@ abstract class Evaluator implements EvaluationReason {
 
         public String getReason() {
             return reason;
-        }
-
-        public boolean isSendToExperiment() {
-            return sendToExperiment;
         }
 
         public String getKeyName() {
