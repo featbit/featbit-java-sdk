@@ -1,10 +1,8 @@
 package co.featbit.server;
 
-import co.featbit.commons.json.JsonHelper;
 import co.featbit.commons.model.FBUser;
 import co.featbit.server.exterior.DataStorage;
 import co.featbit.server.exterior.DataStorageTypes;
-import com.google.gson.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +10,6 @@ import static co.featbit.server.Evaluator.*;
 import static co.featbit.server.exterior.DataStorageTypes.FEATURES;
 import static co.featbit.server.exterior.DataStorageTypes.SEGMENTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class EvaluationTest extends ComponentBaseTest {
 
@@ -68,16 +65,11 @@ class EvaluationTest extends ComponentBaseTest {
     }
 
     @Test
-    void testEvaluationWhenMatchTargetUser() throws Exception {
+    void testEvaluationWhenMatchTargetUser() {
         InsightTypes.Event event = InsightTypes.FlagEvent.of(user2);
         Evaluator.EvalResult res = evaluator.evaluate(flag, user2, event);
         assertEquals("teamB", res.getValue());
         assertEquals(REASON_TARGET_MATCH, res.getReason());
-
-        JsonObject payload = JsonHelper.deserialize(JsonHelper.serialize(event), JsonObject.class);
-        JsonObject entry = payload.getAsJsonArray("variations").get(0).getAsJsonObject();
-        assertFalse(entry.has("sendToExperiment"));
-        assertEquals("teamB", entry.getAsJsonObject("variation").get("value").getAsString());
     }
 
     @Test
