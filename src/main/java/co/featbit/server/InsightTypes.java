@@ -219,7 +219,6 @@ public abstract class InsightTypes {
             for (FlagEventVariation variation : flagEvent.userVariations) {
                 JsonObject var = new JsonObject();
                 var.addProperty("featureFlagKey", variation.getFeatureFlagKeyName());
-                var.addProperty("sendToExperiment", variation.getVariation().isSendToExperiment());
                 var.addProperty("timestamp", variation.getTimestamp());
                 JsonObject v = new JsonObject();
                 v.addProperty("id", variation.getVariation().getIndex());

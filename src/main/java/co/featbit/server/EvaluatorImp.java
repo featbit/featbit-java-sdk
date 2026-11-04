@@ -63,7 +63,6 @@ final class EvaluatorImp extends Evaluator {
             return EvalResult.of(flag.getVariationType(),
                     flag.getVariation(flag.getDisabledVariationId()),
                     REASON_FLAG_OFF,
-                    false,
                     flag.getKey(), flag.getName());
         }
         return null;
@@ -76,7 +75,6 @@ final class EvaluatorImp extends Evaluator {
                 .map(target -> EvalResult.of(featureFlag.getVariationType(),
                         featureFlag.getVariation(target.getVariationId()),
                         REASON_TARGET_MATCH,
-                        featureFlag.exptIncludeAllTargets(),
                         featureFlag.getKey(),
                         featureFlag.getName()))
                 .orElse(null);
@@ -89,7 +87,6 @@ final class EvaluatorImp extends Evaluator {
                 targetRule.getVariations(),
                 user,
                 REASON_RULE_MATCH,
-                targetRule.includedInExpt(),
                 targetRule.getDispatchKey());
     }
 
@@ -244,7 +241,6 @@ final class EvaluatorImp extends Evaluator {
                 fallthrough.getVariations(),
                 user,
                 REASON_FALLTHROUGH,
-                fallthrough.includedInExpt(),
                 fallthrough.getDispatchKey());
     }
 
@@ -252,7 +248,6 @@ final class EvaluatorImp extends Evaluator {
                                                  Collection<DataModel.RolloutVariation> rollouts,
                                                  FBUser user,
                                                  String reason,
-                                                 Boolean ruleIncludedInExperiment,
                                                  String dispatchKey) {
         dispatchKey = StringUtils.isEmpty(dispatchKey) ? "keyid" : dispatchKey;
         String userAttr = user.getProperty(dispatchKey);
@@ -264,34 +259,8 @@ final class EvaluatorImp extends Evaluator {
                 .map(rollout -> EvalResult.of(featureFlag.getVariationType(),
                         featureFlag.getVariation(rollout.getId()),
                         reason,
-                        isSendToExperiment(dispatchKeyValue, rollout, featureFlag.exptIncludeAllTargets(), ruleIncludedInExperiment),
                         featureFlag.getKey(),
                         featureFlag.getName()))
                 .orElse(null);
     }
-
-    private boolean isSendToExperiment(String dispatchKeyValue,
-                                       DataModel.RolloutVariation rollout,
-                                       Boolean exptIncludeAllRules,
-                                       Boolean ruleIncludedInExperiment) {
-        if (exptIncludeAllRules) {
-            return true;
-        }
-        if (ruleIncludedInExperiment) {
-            double sendToExperimentPercentage = rollout.getExptRollout();
-            double splittingPercentage = rollout.splittingPercentage();
-            if (sendToExperimentPercentage == 0D || splittingPercentage == 0D) {
-                return false;
-            }
-            double upperBound = sendToExperimentPercentage / splittingPercentage;
-            if (upperBound > 1D) {
-                upperBound = 1D;
-            }
-            String newDispatchKeyValue = String.join("", EXPT_KEY_PREFIX, dispatchKeyValue);
-            return VariationSplittingAlgorithm.ifKeyBelongsPercentage(newDispatchKeyValue, new double[]{0D, upperBound});
-        }
-        return false;
-    }
-
-
 }

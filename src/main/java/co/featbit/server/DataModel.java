@@ -262,7 +262,6 @@ public abstract class DataModel {
         final Date updatedAt;
         private Long timestamp;
         private final boolean isArchived;
-        private final boolean exptIncludeAllTargets;
         // Missing values from older servers keep evaluation event collection enabled.
         private Boolean insightsEnabled;
         private final boolean isEnabled;
@@ -276,11 +275,10 @@ public abstract class DataModel {
         private final String disabledVariationId;
         private transient Map<String, Variation> variationMap;
 
-        FeatureFlag(String id, Date updatedAt, boolean isArchived, boolean exptIncludeAllTargets, boolean isEnabled, String name, String key, String variationType, List<Variation> variations, List<TargetUser> targetUsers, List<TargetRule> rules, Fallthrough fallthrough, String disabledVariationId) {
+        FeatureFlag(String id, Date updatedAt, boolean isArchived, boolean isEnabled, String name, String key, String variationType, List<Variation> variations, List<TargetUser> targetUsers, List<TargetRule> rules, Fallthrough fallthrough, String disabledVariationId) {
             this.id = id;
             this.updatedAt = updatedAt;
             this.isArchived = isArchived;
-            this.exptIncludeAllTargets = exptIncludeAllTargets;
             this.isEnabled = isEnabled;
             this.name = name;
             this.key = key;
@@ -314,10 +312,6 @@ public abstract class DataModel {
         @Override
         public Integer getType() {
             return FB_FEATURE_FLAG;
-        }
-
-        public boolean exptIncludeAllTargets() {
-            return exptIncludeAllTargets;
         }
 
         public boolean isInsightsEnabled() {
@@ -444,23 +438,16 @@ public abstract class DataModel {
     }
 
     static final class TargetRule {
-        private final boolean includedInExpt;
-
         private final String dispatchKey;
 
         private final List<Condition> conditions;
 
         private final List<RolloutVariation> variations;
 
-        TargetRule(boolean includedInExpt, String dispatchKey, List<Condition> conditions, List<RolloutVariation> variations) {
-            this.includedInExpt = includedInExpt;
+        TargetRule(String dispatchKey, List<Condition> conditions, List<RolloutVariation> variations) {
             this.dispatchKey = dispatchKey;
             this.conditions = conditions;
             this.variations = variations;
-        }
-
-        public boolean includedInExpt() {
-            return includedInExpt;
         }
 
         public List<Condition> getConditions() {
@@ -539,12 +526,9 @@ public abstract class DataModel {
 
         private final double[] rollout;
 
-        private final double exptRollout;
-
-        RolloutVariation(String id, double[] rollout, double exptRollout) {
+        RolloutVariation(String id, double[] rollout) {
             this.id = id;
             this.rollout = rollout;
-            this.exptRollout = exptRollout;
         }
 
         public String getId() {
@@ -554,32 +538,16 @@ public abstract class DataModel {
         public double[] getRollout() {
             return rollout;
         }
-
-        public double getExptRollout() {
-            return exptRollout;
-        }
-
-        public double splittingPercentage() {
-            if (rollout != null) return rollout[1] - rollout[0];
-            return 0D;
-        }
     }
 
     static final class Fallthrough {
-        private final boolean includedInExpt;
-
         private final String dispatchKey;
 
         private final List<RolloutVariation> variations;
 
-        Fallthrough(boolean includedInExpt, String dispatchKey, List<RolloutVariation> variations) {
-            this.includedInExpt = includedInExpt;
+        Fallthrough(String dispatchKey, List<RolloutVariation> variations) {
             this.dispatchKey = dispatchKey;
             this.variations = variations;
-        }
-
-        public boolean includedInExpt() {
-            return includedInExpt;
         }
 
         public List<RolloutVariation> getVariations() {
