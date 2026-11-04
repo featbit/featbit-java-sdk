@@ -263,6 +263,8 @@ public abstract class DataModel {
         private Long timestamp;
         private final boolean isArchived;
         private final boolean exptIncludeAllTargets;
+        // Missing values from older servers keep evaluation event collection enabled.
+        private Boolean insightsEnabled;
         private final boolean isEnabled;
         private final String name;
         private final String key;
@@ -316,6 +318,10 @@ public abstract class DataModel {
 
         public boolean exptIncludeAllTargets() {
             return exptIncludeAllTargets;
+        }
+
+        public boolean isInsightsEnabled() {
+            return !Boolean.FALSE.equals(insightsEnabled);
         }
 
         public boolean isEnabled() {

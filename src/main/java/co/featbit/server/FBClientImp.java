@@ -12,8 +12,10 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -252,7 +254,9 @@ public final class FBClientImp implements FBClient {
                 Loggers.EVALUATION.warn("FB JAVA SDK: evaluation result {} didn't matched expected type {}", res.getValue(), requiredType);
                 return Evaluator.EvalResult.error(dv, REASON_WRONG_TYPE, res.getKeyName(), res.getName());
             }
-            eventHandler.accept(event);
+            if (flag.isInsightsEnabled()) {
+                eventHandler.accept(event);
+            }
             return res;
         } catch (Exception ex) {
             logger.error("FB JAVA SDK: unexpected error in evaluation", ex);
@@ -316,6 +320,7 @@ public final class FBClientImp implements FBClient {
     @Override
     public AllFlagStates getAllLatestFlagsVariations(FBUser user) {
         ImmutableMap.Builder<Evaluator.EvalResult, InsightTypes.FlagEvent> builder = ImmutableMap.builder();
+        Set<String> insightsEnabledFlags = new HashSet<>();
         boolean success = true;
         String errorString = "";
         try {
@@ -334,6 +339,9 @@ public final class FBClientImp implements FBClient {
                     DataModel.FeatureFlag flag = (DataModel.FeatureFlag) item;
                     Evaluator.EvalResult res = evaluator.evaluate(flag, user, event);
                     builder.put(res, event);
+                    if (flag.isInsightsEnabled()) {
+                        insightsEnabledFlags.add(flag.getKey());
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -341,7 +349,7 @@ public final class FBClientImp implements FBClient {
             success = false;
             errorString = REASON_ERROR;
         }
-        return new Implicits.ComplexAllFlagStates(success, errorString, builder.build(), eventHandler);
+        return new Implicits.ComplexAllFlagStates(success, errorString, builder.build(), eventHandler, insightsEnabledFlags);
     }
 
     @Override
