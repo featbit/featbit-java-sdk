@@ -152,20 +152,20 @@ public abstract class DataModel {
             return timestamp;
         }
 
-        // Duplicate keys (e.g. an archived copy of a re-created flag): the last entry wins.
+        // Duplicate flag keys: keep the newest item; the last entry wins timestamp ties.
         Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> toStorageType() {
             Map<String, DataStorageTypes.Item> flags = new LinkedHashMap<>();
             for (FeatureFlag flag : getFeatureFlags()) {
                 DataStorageTypes.Item item = flag.isArchived ? flag.toArchivedItem() : flag;
-                flags.put(item.getId(), item);
+                flags.merge(flag.getKey(), item,
+                        (existing, incoming) -> existing.getTimestamp() > incoming.getTimestamp() ? existing : incoming);
             }
-            Map<String, DataStorageTypes.Item> segments = new LinkedHashMap<>();
+            ImmutableMap.Builder<String, DataStorageTypes.Item> segments = ImmutableMap.builder();
             for (Segment segment : getSegments()) {
                 DataStorageTypes.Item item = segment.isArchived() ? segment.toArchivedItem() : segment;
                 segments.put(item.getId(), item);
             }
-            return ImmutableMap.of(DataStorageTypes.FEATURES, ImmutableMap.copyOf(flags),
-                    DataStorageTypes.SEGMENTS, ImmutableMap.copyOf(segments));
+            return ImmutableMap.of(DataStorageTypes.FEATURES, ImmutableMap.copyOf(flags), DataStorageTypes.SEGMENTS, segments.build());
         }
     }
 
