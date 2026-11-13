@@ -26,4 +26,20 @@ class DataModelTest {
 
         assertSame(newestFlag, data.toStorageType().get(DataStorageTypes.FEATURES).get("same-key"));
     }
+
+    @Test
+    void toStorageTypeKeepsSegmentWithLatestTimestampForDuplicateId() {
+        DataModel.Segment newestSegment = new DataModel.Segment(
+                "same-id", false, new Date(2000),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        DataModel.Segment olderSegment = new DataModel.Segment(
+                "same-id", false, new Date(1000),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        newestSegment.afterDeserialization();
+        olderSegment.afterDeserialization();
+        DataModel.Data data = new DataModel.Data(
+                "full", Collections.emptyList(), Arrays.asList(newestSegment, olderSegment));
+
+        assertSame(newestSegment, data.toStorageType().get(DataStorageTypes.SEGMENTS).get("same-id"));
+    }
 }
