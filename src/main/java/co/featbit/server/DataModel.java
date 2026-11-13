@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -152,17 +153,20 @@ public abstract class DataModel {
         }
 
         Map<DataStorageTypes.Category, Map<String, DataStorageTypes.Item>> toStorageType() {
-            ImmutableMap.Builder<String, DataStorageTypes.Item> flags = ImmutableMap.builder();
+            Map<String, DataStorageTypes.Item> flags = new LinkedHashMap<>();
             for (FeatureFlag flag : getFeatureFlags()) {
                 DataStorageTypes.Item item = flag.isArchived ? flag.toArchivedItem() : flag;
-                flags.put(item.getId(), item);
+                flags.merge(flag.getKey(), item,
+                        (existing, incoming) -> existing.getTimestamp() > incoming.getTimestamp() ? existing : incoming);
             }
-            ImmutableMap.Builder<String, DataStorageTypes.Item> segments = ImmutableMap.builder();
+            Map<String, DataStorageTypes.Item> segments = new LinkedHashMap<>();
             for (Segment segment : getSegments()) {
                 DataStorageTypes.Item item = segment.isArchived() ? segment.toArchivedItem() : segment;
-                segments.put(item.getId(), item);
+                segments.merge(segment.getId(), item,
+                        (existing, incoming) -> existing.getTimestamp() > incoming.getTimestamp() ? existing : incoming);
             }
-            return ImmutableMap.of(DataStorageTypes.FEATURES, flags.build(), DataStorageTypes.SEGMENTS, segments.build());
+            return ImmutableMap.of(DataStorageTypes.FEATURES, ImmutableMap.copyOf(flags),
+                    DataStorageTypes.SEGMENTS, ImmutableMap.copyOf(segments));
         }
     }
 
